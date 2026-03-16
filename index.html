@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0a0c0f;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Arial Black', sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 20px;
+        }
+
+        .jarvis-button {
+            width: min(80vmin, 400px);
+            height: min(80vmin, 400px);
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #1e2a3a, #0a0f1a);
+            border: 6px solid #00aeff;
+            box-shadow: 
+                0 0 60px #00aeff,
+                inset 0 0 40px #004c99;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+            user-select: none;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .jarvis-button::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 174, 255, 0.3);
+            animation: pulse-ring 2s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 1; }
+            70% { transform: scale(1.1); opacity: 0.4; }
+            100% { transform: scale(0.95); opacity: 1; }
+        }
+
+        .jarvis-button:hover {
+            transform: scale(1.05);
+            box-shadow: 
+                0 0 90px #00aeff,
+                inset 0 0 60px #0066cc;
+            border-color: #80d4ff;
+        }
+
+        .jarvis-button:active {
+            transform: scale(0.98);
+        }
+
+        .jarvis-text {
+            font-size: clamp(2rem, 12vw, 4rem);
+            color: #00aeff;
+            text-shadow: 
+                0 0 30px #0077ff,
+                2px 2px 4px #00000080;
+            letter-spacing: 0.2em;
+            font-weight: 900;
+            transform: skew(-2deg);
+            white-space: nowrap;
+            padding: 0 20px;
+        }
+
+        .status {
+            color: #b0d4ff;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            background: #0e1a26cc;
+            padding: 12px 24px;
+            border-radius: 50px;
+            border: 1px solid #00aeff;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 0 20px #00aeff33;
+            max-width: 90%;
+            text-align: center;
+            word-break: break-word;
+        }
+
+        .permission-hint {
+            margin-top: 20px;
+            color: #6a8fb1;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="jarvis-button" id="jarvisBtn">
+            <span class="jarvis-text">J.A.R.V.I.S</span>
+        </div>
+        <div class="status" id="status">Нажмите, чтобы начать</div>
+        <div class="permission-hint" id="hint">🔍 После нажатия разрешите доступ к микрофону</div>
+    </div>
+
+    <script>
+        (function() {
+            const btn = document.getElementById('jarvisBtn');
+            const statusEl = document.getElementById('status');
+            const hintEl = document.getElementById('hint');
+
+            // Проверка поддержки браузера
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                statusEl.textContent = '❌ Браузер не поддерживает голосовое управление';
+                hintEl.textContent = 'Используйте Chrome, Edge или Safari';
+                btn.style.opacity = '0.5';
+                btn.style.pointerEvents = 'none';
+                throw new Error('Speech recognition not supported');
+            }
+
+            // Инициализация
+            const recognition = new SpeechRecognition();
+            const synthesis = window.speechSynthesis;
+            
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'ru-RU';
+
+            let isListening = false;
+            let microphoneAllowed = false;
+
+            // Настройка голоса (мужской русский)
+            function speak(text) {
+                if (!synthesis) return;
+                synthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ru-RU';
+                utterance.rate = 0.95;
+                utterance.pitch = 0.9;
+                utterance.volume = 1;
+
+                // Выбор мужского голоса
+                const voices = synthesis.getVoices();
+                // Приоритет: русские голоса с именами, содержащими "mikhail", "pavel" или "male"
+                const maleVoice = voices.find(v => 
+                    v.lang.includes('ru') && 
+                    (v.name.toLowerCase().includes('mikhail') || 
+                     v.name.toLowerCase().includes('pavel') ||
+                     v.name.toLowerCase().includes('male') ||
+                     v.name.toLowerCase().includes('мужской'))
+                ) || voices.find(v => v.lang.includes('ru')); // запасной русский
+
+                if (maleVoice) utterance.voice = maleVoice;
+                
+                synthesis.speak(utterance);
+            }
+
+            // Обработка команд
+            function processCommand(command) {
+                const cmd = command.toLowerCase().trim();
+                statusEl.textContent = `✅ Распознано: ${command}`;
+
+                // Приветствие
+                if (cmd.includes('привет') || cmd.includes('здравствуй')) {
+                    speak('Здравствуйте, сэр. Чем могу помочь?');
+                }
+                // Время
+                else if (cmd.includes('время') || cmd.includes('который час')) {
+                    const now = new Date();
+                    const time = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                    speak(`Сейчас ${time}`);
+                }
+                // Дата
+                else if (cmd.includes('дата') || cmd.includes('сегодня') || cmd.includes('какое число')) {
+                    const now = new Date();
+                    const date = now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+                    speak(`Сегодня ${date}`);
+                }
+                // Открыть YouTube
+                else if (cmd.includes('ютуб') || (cmd.includes('открой') && cmd.includes('youtube'))) {
+                    window.open('https://youtube.com', '_blank');
+                    speak('Открываю YouTube');
+                }
+                // Открыть Google
+                else if (cmd.includes('гугл') || (cmd.includes('открой') && cmd.includes('google'))) {
+                    window.open('https://google.com', '_blank');
+                    speak('Открываю Google');
+                }
+                // Поиск в Google
+                else if (cmd.includes('найди') || cmd.includes('поиск')) {
+                    let query = cmd.replace(/найди|поиск/gi, '').trim();
+                    if (query) {
+                        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                        speak(`Ищу ${query}`);
+                    } else {
+                        speak('Что найти?');
+                    }
+                }
+                // Шутка
+                else if (cmd.includes('шутку') || cmd.includes('анекдот')) {
+                    const jokes = [
+                        'Почему программисты любят темноту? Потому что свет привлекает баги.',
+                        'Что сказал один байт другому? Ты глянь, нас опять соединяют в пакеты!',
+                        'Как программисты моют посуду? Они запускают мойку и пока она работает, пьют кофе.'
+                    ];
+                    speak(jokes[Math.floor(Math.random() * jokes.length)]);
+                }
+                // Что умеешь
+                else if (cmd.includes('что ты умеешь') || cmd.includes('помощь')) {
+                    speak('Я могу показать время, дату, открыть YouTube или Google, найти информацию, рассказать шутку. Просто скажите команду.');
+                }
+                // Стоп
+                else if (cmd.includes('стоп') || cmd.includes('хватит')) {
+                    speak('Отключаюсь. Нажмите кнопку, чтобы снова активировать.');
+                    isListening = false;
+                    recognition.stop();
+                }
+                // Неизвестно
+                else {
+                    speak('Не понял команду, сэр.');
+                }
+            }
+
+            // События распознавания
+            recognition.onstart = () => {
+                isListening = true;
+                statusEl.textContent = '🎤 Слушаю...';
+                hintEl.textContent = 'Говорите команду';
+            };
+
+            recognition.onend = () => {
+                if (isListening) {
+                    // Автоматически перезапускаем, если не было команды стоп
+                    if (microphoneAllowed) {
+                        recognition.start();
+                    }
+                } else {
+                    statusEl.textContent = 'Готов к работе';
+                    hintEl.textContent = 'Нажмите кнопку, чтобы начать';
+                }
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                processCommand(transcript);
+            };
+
+            recognition.onerror = (event) => {
+                if (event.error === 'not-allowed') {
+                    statusEl.textContent = '❌ Микрофон заблокирован';
+                    hintEl.textContent = 'Разрешите доступ в настройках браузера';
+                    microphoneAllowed = false;
+                    isListening = false;
+                } else {
+                    statusEl.textContent = `⚠️ Ошибка: ${event.error}`;
+                }
+            };
+
+            // Обработчик кнопки
+            btn.addEventListener('click', () => {
+                // Запрашиваем доступ к микрофону
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then((stream) => {
+                        // Останавливаем все треки, чтобы освободить микрофон для распознавания
+                        stream.getTracks().forEach(track => track.stop());
+                        
+                        microphoneAllowed = true;
+                        statusEl.textContent = '🎤 Активация...';
+                        hintEl.textContent = 'Говорите "Джарвис" для активации (или сразу команду)';
+                        
+                        // Запускаем распознавание
+                        if (!isListening) {
+                            recognition.start();
+                        }
+                    })
+                    .catch((err) => {
+                        statusEl.textContent = '❌ Нет доступа к микрофону';
+                        hintEl.textContent = 'Проверьте настройки браузера';
+                        console.error(err);
+                    });
+            });
+
+            // Предзагрузка голосов
+            if (synthesis) {
+                synthesis.getVoices();
+                if (synthesis.onvoiceschanged !== undefined) {
+                    synthesis.onvoiceschanged = () => {};
+                }
+            }
+
+            statusEl.textContent = 'Нажмите, чтобы начать';
+        })();
+    </script>
+</body>
+</html>
