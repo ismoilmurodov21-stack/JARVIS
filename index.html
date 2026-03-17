@@ -43,6 +43,7 @@
             white-space: nowrap;
             padding: 0 0.2em;
             animation: glow 3s infinite ease-in-out;
+            margin-bottom: 30px;
         }
 
         @keyframes glow {
@@ -51,13 +52,46 @@
             100% { text-shadow: 0 0 40px #006eff, 2px 2px 10px black; }
         }
 
+        .start-button {
+            padding: 16px 48px;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00aeff;
+            background: transparent;
+            border: 3px solid #00aeff;
+            border-radius: 60px;
+            cursor: pointer;
+            box-shadow: 0 0 30px #00aeff80, inset 0 0 20px #00aeff40;
+            transition: all 0.3s ease;
+            font-family: 'Segoe UI', sans-serif;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+        }
+
+        .start-button:hover {
+            background: #00aeff20;
+            box-shadow: 0 0 50px #00aeff, inset 0 0 30px #00aeff;
+            transform: scale(1.05);
+        }
+
+        .start-button:active {
+            transform: scale(0.95);
+        }
+
+        .start-button.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+            border-color: #666;
+            box-shadow: none;
+        }
+
         .status-led {
             width: 20px;
             height: 20px;
             border-radius: 50%;
             background: #ff4444;
             box-shadow: 0 0 30px #f44;
-            margin-top: 30px;
+            margin-top: 20px;
             transition: all 0.2s ease;
         }
 
@@ -102,6 +136,7 @@
 <body>
     <div class="jarvis-core">
         <div class="jarvis-name">J.A.R.V.I.S</div>
+        <button class="start-button" id="startBtn">▶ СТАРТ</button>
         <div class="status-led" id="statusLed"></div>
         <div class="hidden-message" id="statusMessage"></div>
     </div>
@@ -116,6 +151,7 @@
             const GEMINI_API_KEY = 'AIzaSyCzTIi_qm933rxp3HAxMYurnQmZIfAbtqg';
 
             // ======================== ЭЛЕМЕНТҲО ========================
+            const startBtn = document.getElementById('startBtn');
             const led = document.getElementById('statusLed');
             const statusMsg = document.getElementById('statusMessage');
 
@@ -127,6 +163,7 @@
             let currentVolume = 1.0;
             let isProcessing = false;
             let isGeminiEnabled = !!GEMINI_API_KEY;
+            let isStarted = false;
 
             // ======================== 40+ БАРНОМАҲО ========================
             const APPS = {
@@ -559,7 +596,9 @@
                     log('❌ Ошибка микрофона: ' + e.error);
                     if (e.error === 'not-allowed') {
                         micPermission = false;
-                        statusMsg.textContent = '❌ Нет доступа к микрофону. Разрешите доступ и обновите страницу.';
+                        statusMsg.textContent = '❌ Нет доступа к микрофону. Разрешите доступ и нажмите СТАРТ снова.';
+                        startBtn.classList.remove('disabled');
+                        isStarted = false;
                     }
                 };
                 rec.onend = () => { if (micPermission) try { rec.start(); } catch(e){} };
@@ -573,21 +612,31 @@
                         micPermission = true;
                         log('✅ Микрофон доступен. Скажите "Джарвис".');
                         statusMsg.textContent = 'Скажите "Джарвис" для активации';
+                        startBtn.classList.add('disabled');
                         if (recognition) try { recognition.start(); } catch(e){}
                     })
                     .catch(() => {
                         micPermission = false;
                         log('❌ Нет доступа к микрофону.');
-                        statusMsg.textContent = '❌ Нет доступа к микрофону. Разрешите доступ.';
+                        statusMsg.textContent = '❌ Нет доступа к микрофону. Разрешите доступ и нажмите СТАРТ.';
                     });
             }
 
+            // Инициализация распознавания
             recognition = initRecognition();
             if (synthesis) {
                 synthesis.getVoices();
                 if (synthesis.onvoiceschanged) synthesis.onvoiceschanged = () => {};
             }
-            requestMicAndStart();
+
+            // Обработчик нажатия на кнопку СТАРТ
+            startBtn.addEventListener('click', () => {
+                if (!isStarted) {
+                    requestMicAndStart();
+                    isStarted = true;
+                }
+            });
+
             setAwake(false);
         })();
     </script>
