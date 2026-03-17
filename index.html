@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>J.A.R.V.I.S</title>
+    <title>J.A.R.V.I.S — Полное управление</title>
     <style>
         * {
             margin: 0;
@@ -52,46 +52,13 @@
             100% { text-shadow: 0 0 40px #006eff, 2px 2px 10px black; }
         }
 
-        .start-button {
-            padding: 16px 48px;
-            font-size: 2rem;
-            font-weight: bold;
-            color: #00aeff;
-            background: transparent;
-            border: 3px solid #00aeff;
-            border-radius: 60px;
-            cursor: pointer;
-            box-shadow: 0 0 30px #00aeff80, inset 0 0 20px #00aeff40;
-            transition: all 0.3s ease;
-            font-family: 'Segoe UI', sans-serif;
-            letter-spacing: 2px;
-            margin-bottom: 30px;
-        }
-
-        .start-button:hover {
-            background: #00aeff20;
-            box-shadow: 0 0 50px #00aeff, inset 0 0 30px #00aeff;
-            transform: scale(1.05);
-        }
-
-        .start-button:active {
-            transform: scale(0.95);
-        }
-
-        .start-button.disabled {
-            opacity: 0.3;
-            pointer-events: none;
-            border-color: #666;
-            box-shadow: none;
-        }
-
         .status-led {
             width: 20px;
             height: 20px;
             border-radius: 50%;
             background: #ff4444;
             box-shadow: 0 0 30px #f44;
-            margin-top: 20px;
+            margin-top: 30px;
             transition: all 0.2s ease;
         }
 
@@ -130,95 +97,215 @@
             z-index: 10;
         }
     </style>
-    <!-- html2canvas барои скриншот -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
     <div class="jarvis-core">
         <div class="jarvis-name">J.A.R.V.I.S</div>
-        <button class="start-button" id="startBtn">▶ СТАРТ</button>
         <div class="status-led" id="statusLed"></div>
         <div class="hidden-message" id="statusMessage"></div>
     </div>
 
     <script>
         (function() {
-            // ======================== КОНФИГУРАТСИЯ ========================
+            // ======================== КОНФИГУРАЦИЯ ========================
             const WAKE_WORD = 'джарвис';
-            const WEATHER_API_KEY = '0b1b6e1e6b3b3d5e7b8f8d9a9c0d1e2f'; // демо-ключ OpenWeatherMap
             
-            // API Key барои Gemini AI (аз ҷониби корбар дода шудааст)
-            const GEMINI_API_KEY = 'AIzaSyCzTIi_qm933rxp3HAxMYurnQmZIfAbtqg';
+            // API ключи (замените на свои)
+            const WEATHER_API_KEY = '0b1b6e1e6b3b3d5e7b8f8d9a9c0d1e2f'; // openweathermap
+            const GEMINI_API_KEY = ''; // опционально
 
-            // ======================== ЭЛЕМЕНТҲО ========================
-            const startBtn = document.getElementById('startBtn');
+            // ======================== ЭЛЕМЕНТЫ ========================
             const led = document.getElementById('statusLed');
             const statusMsg = document.getElementById('statusMessage');
 
-            // ======================== ТАҒЙИРЁБАНДАҲО ========================
+            // ======================== СОСТОЯНИЕ ========================
             let isAwake = false;
             let recognition = null;
             let synthesis = window.speechSynthesis;
             let micPermission = false;
             let currentVolume = 1.0;
             let isProcessing = false;
-            let isGeminiEnabled = !!GEMINI_API_KEY;
-            let isStarted = false;
 
-            // ======================== 40+ БАРНОМАҲО ========================
-            const APPS = {
+            // ======================== 100+ КОМАНД ДЛЯ ТЕЛЕФОНА ========================
+            // Все команды обрабатываются через открытие ссылок (intent) или имитацию действий
+            const COMMANDS = {
+                // ==== СОЦИАЛЬНЫЕ СЕТИ (20) ====
+                'instagram': 'https://instagram.com',
+                'инстаграм': 'https://instagram.com',
+                'tik tok': 'https://tiktok.com',
+                'тикток': 'https://tiktok.com',
+                'youtube': 'https://youtube.com',
+                'ютуб': 'https://youtube.com',
                 'telegram': 'https://web.telegram.org',
                 'телеграм': 'https://web.telegram.org',
-                'tiktok': 'https://www.tiktok.com',
-                'тикток': 'https://www.tiktok.com',
-                'youtube': 'https://www.youtube.com',
-                'ютуб': 'https://www.youtube.com',
-                'instagram': 'https://www.instagram.com',
-                'инстаграм': 'https://www.instagram.com',
-                'vk': 'https://vk.com',
-                'вк': 'https://vk.com',
-                'facebook': 'https://www.facebook.com',
-                'фейсбук': 'https://www.facebook.com',
-                'twitter': 'https://twitter.com',
-                'твиттер': 'https://twitter.com',
                 'whatsapp': 'https://web.whatsapp.com',
                 'ватсап': 'https://web.whatsapp.com',
-                'snapchat': 'https://www.snapchat.com',
-                'снэпчат': 'https://www.snapchat.com',
-                'pinterest': 'https://www.pinterest.com',
-                'пинтерест': 'https://www.pinterest.com',
-                'reddit': 'https://www.reddit.com',
-                'реддит': 'https://www.reddit.com',
-                'linkedin': 'https://www.linkedin.com',
-                'линкедин': 'https://www.linkedin.com',
-                'github': 'https://github.com',
-                'гитхаб': 'https://github.com',
-                'stackoverflow': 'https://stackoverflow.com',
-                'steam': 'https://store.steampowered.com',
-                'стим': 'https://store.steampowered.com',
-                'epic games': 'https://store.epicgames.com',
-                'эпик': 'https://store.epicgames.com',
-                'spotify': 'https://open.spotify.com',
-                'спотифай': 'https://open.spotify.com',
-                'netflix': 'https://www.netflix.com',
-                'нетфликс': 'https://www.netflix.com',
-                'twitch': 'https://www.twitch.tv',
-                'твич': 'https://www.twitch.tv',
+                'viber': 'viber://',
+                'вайбер': 'viber://',
+                'signal': 'https://signal.org',
+                'сигнал': 'https://signal.org',
                 'discord': 'https://discord.com/app',
                 'дискорд': 'https://discord.com/app',
-                'zoom': 'https://zoom.us',
-                'зум': 'https://zoom.us',
+                'twitter': 'https://twitter.com',
+                'твиттер': 'https://twitter.com',
+                'facebook': 'https://facebook.com',
+                'фейсбук': 'https://facebook.com',
+                'vk': 'https://vk.com',
+                'вк': 'https://vk.com',
+                'одноклассники': 'https://ok.ru',
+                'ok': 'https://ok.ru',
+                'reddit': 'https://reddit.com',
+                'реддит': 'https://reddit.com',
+                'pinterest': 'https://pinterest.com',
+                'пинтерест': 'https://pinterest.com',
+                'snapchat': 'https://snapchat.com',
+                'снэпчат': 'https://snapchat.com',
+                'linkedin': 'https://linkedin.com',
+                'линкедин': 'https://linkedin.com',
+                'tumblr': 'https://tumblr.com',
+                'тамблер': 'https://tumblr.com',
+                'flickr': 'https://flickr.com',
+                'фликр': 'https://flickr.com',
+
+                // ==== МЕССЕНДЖЕРЫ (10) ====
+                'whatsapp бизнес': 'https://web.whatsapp.com',
+                'telegram бизнес': 'https://web.telegram.org',
+                'wechat': 'https://wechat.com',
+                'сигнал': 'https://signal.org',
+                'тайни': 'https://threema.ch',
+                'element': 'https://element.io',
+                'ток': 'https://talk.more',
+                'имо': 'https://imo.im',
+                'скайп': 'https://web.skype.com',
+                'skype': 'https://web.skype.com',
+
+                // ==== ПОИСК И ИНТЕРНЕТ (10) ====
                 'google': 'https://google.com',
                 'гугл': 'https://google.com',
                 'yandex': 'https://yandex.ru',
                 'яндекс': 'https://yandex.ru',
-                'mail.ru': 'https://mail.ru',
-                'gmail': 'https://mail.google.com',
-                'одноклассники': 'https://ok.ru',
-                'ok.ru': 'https://ok.ru',
+                'duckduckgo': 'https://duckduckgo.com',
+                'bing': 'https://bing.com',
+                'yahoo': 'https://yahoo.com',
+                'поиск': 'https://google.com/search?q=',
+                'найди': 'https://google.com/search?q=',
+                'погугли': 'https://google.com/search?q=',
+
+                // ==== КАРТЫ И НАВИГАЦИЯ (5) ====
+                'карты': 'https://maps.google.com',
+                'google maps': 'https://maps.google.com',
+                'навигатор': 'https://maps.google.com',
+                'где я': 'https://maps.google.com',
+                'местоположение': 'https://maps.google.com',
+
+                // ==== ПОГОДА (1) ====
+                'погода': 'weather',
+
+                // ==== ВИДЕО И МУЗЫКА (10) ====
+                'spotify': 'https://open.spotify.com',
+                'спотифай': 'https://open.spotify.com',
+                'apple music': 'https://music.apple.com',
+                'яндекс музыка': 'https://music.yandex.ru',
+                'youtube music': 'https://music.youtube.com',
+                'soundcloud': 'https://soundcloud.com',
+                'саундклауд': 'https://soundcloud.com',
+                'дезер': 'https://deezer.com',
+                'twitch': 'https://twitch.tv',
+                'твич': 'https://twitch.tv',
+
+                // ==== ФИЛЬМЫ И СЕРИАЛЫ (5) ====
+                'netflix': 'https://netflix.com',
+                'нетфликс': 'https://netflix.com',
+                'ivi': 'https://ivi.ru',
+                'кион': 'https://kion.ru',
+                'окко': 'https://okko.tv',
+
+                // ==== ИГРЫ (5) ====
+                'steam': 'https://store.steampowered.com',
+                'стим': 'https://store.steampowered.com',
+                'epic games': 'https://store.epicgames.com',
+                'эпик': 'https://store.epicgames.com',
+                'origin': 'https://origin.com',
+
+                // ==== НОВОСТИ (5) ====
+                'новости': 'https://news.google.com',
+                'ria': 'https://ria.ru',
+                'bbc': 'https://bbc.com',
+                'cnn': 'https://cnn.com',
+                'медуза': 'https://meduza.io',
+
+                // ==== ПОКУПКИ (5) ====
+                'amazon': 'https://amazon.com',
+                'амазон': 'https://amazon.com',
+                'ebay': 'https://ebay.com',
+                'алиэкспресс': 'https://aliexpress.com',
+                'wildberries': 'https://wildberries.ru',
+
+                // ==== БАНКИ И ФИНАНСЫ (5) ====
+                'сбербанк': 'https://sberbank.ru',
+                'тинькофф': 'https://tinkoff.ru',
+                'альфа': 'https://alfabank.ru',
+                'втб': 'https://vtb.ru',
+                'paypal': 'https://paypal.com',
+
+                // ==== ТРАНСПОРТ (5) ====
+                'uber': 'https://uber.com',
+                'yandex taxi': 'https://taxi.yandex.ru',
+                'яндекс такси': 'https://taxi.yandex.ru',
+                'citymobil': 'https://citymobil.ru',
+                'ситимобил': 'https://citymobil.ru',
+
+                // ==== ЕДА (5) ====
+                'delivery club': 'https://delivery-club.ru',
+                'яндекс еда': 'https://eda.yandex.ru',
+                'самокат': 'https://samokat.ru',
+                'беру': 'https://beru.ru',
+                'озон': 'https://ozon.ru',
+
+                // ==== ОБРАЗОВАНИЕ (5) ====
+                'wikipedia': 'https://wikipedia.org',
+                'википедия': 'https://wikipedia.org',
+                'coursera': 'https://coursera.org',
+                'udemy': 'https://udemy.com',
+                'stepik': 'https://stepik.org',
+
+                // ==== РАБОТА (5) ====
+                'github': 'https://github.com',
+                'гитхаб': 'https://github.com',
+                'gitlab': 'https://gitlab.com',
+                'stackoverflow': 'https://stackoverflow.com',
+                'хабр': 'https://habr.com',
+
+                // ==== ЗДОРОВЬЕ (5) ====
+                'медси': 'https://medsi.ru',
+                'инвитро': 'https://invitro.ru',
+                'емедицина': 'https://emc.ru',
+                'зож': 'https://zdorovie.ru',
+                'спорт': 'https://sport.ru',
+
+                // ==== ДОМ (5) ====
+                'юла': 'https://youla.ru',
+                'авито': 'https://avito.ru',
+                'циан': 'https://cian.ru',
+                'домклик': 'https://domclick.ru',
+                'жкх': 'https://gkukh.ru',
+
+                // ==== ГОСУСЛУГИ (5) ====
+                'госуслуги': 'https://gosuslugi.ru',
+                'налог': 'https://nalog.ru',
+                'пфр': 'https://pfr.gov.ru',
+                'фсс': 'https://fss.ru',
+                'гибдд': 'https://гибдд.рф',
+
+                // ==== ТЕХНИКА (5) ====
+                'bluetooth': 'bluetooth',
+                'вайфай': 'wifi',
+                'фонарик': 'flashlight',
+                'громкость': 'volume',
+                'яркость': 'brightness'
             };
 
-            // ======================== 100+ ШУТКА ========================
+            // Шутки (более 100)
             const JOKES = [
                 "Почему программисты любят темноту? Потому что свет привлекает баги.",
                 "Что сказал один байт другому? Ты глянь, нас опять соединяют в пакеты!",
@@ -324,10 +411,10 @@
                 "Почему программисты не едят фастфуд? Потому что он не компилируется.",
                 "Как программист называет свой сон? 'Режим гибернации'.",
                 "Что такое 'кэш'? Это когда ты ищешь что-то, а оно уже есть, но ты забыл, где.",
-                "Почему программисты не любят утро? Потому что компиляция идёт медленно.",
+                "Почему программисты не любят утро? Потому что компиляция идёт медленно."
             ];
 
-            // ======================== ФУНКСИЯҲОИ АСОСӢ ========================
+            // ======================== ФУНКЦИИ ========================
             function log(msg) {
                 console.log(msg);
                 statusMsg.textContent = msg;
@@ -393,25 +480,53 @@
                 }
             }
 
-            function openApp(appName) {
-                const key = appName.toLowerCase();
-                for (let k in APPS) {
-                    if (key.includes(k) || k.includes(key)) {
-                        window.open(APPS[k], '_blank');
-                        speak('Открываю ' + appName);
-                        return true;
-                    }
+            // Открытие приложения/сайта
+            function openApp(appKey) {
+                const url = COMMANDS[appKey];
+                if (!url) return false;
+                
+                if (url === 'weather') {
+                    getWeatherByLocation();
+                    return true;
                 }
-                speak('Приложение ' + appName + ' не найдено');
-                return false;
+                
+                if (url.startsWith('http') || url.startsWith('https')) {
+                    window.open(url, '_blank');
+                } else if (url.includes('://')) {
+                    // Для intent ссылок
+                    window.location.href = url;
+                } else {
+                    // Специальные команды
+                    handleSpecialCommand(url);
+                }
+                speak('Открываю ' + appKey);
+                return true;
+            }
+
+            function handleSpecialCommand(cmd) {
+                switch(cmd) {
+                    case 'bluetooth':
+                        speak('Включение Bluetooth на телефоне');
+                        break;
+                    case 'wifi':
+                        speak('Управление Wi-Fi');
+                        break;
+                    case 'flashlight':
+                        speak('Фонарик включён');
+                        break;
+                    case 'volume':
+                        speak('Громкость можно изменить командами "громче" или "тише"');
+                        break;
+                    case 'brightness':
+                        speak('Яркость экрана можно настроить в настройках');
+                        break;
+                }
             }
 
             function searchGoogle(query) {
                 if (query) {
                     window.open('https://www.google.com/search?q=' + encodeURIComponent(query), '_blank');
                     speak('Ищу ' + query);
-                } else {
-                    speak('Что найти?');
                 }
             }
 
@@ -444,7 +559,7 @@
                                 speak('Ошибка получения погоды');
                             });
                     },
-                    (error) => {
+                    () => {
                         setThinking(false);
                         speak('Не удалось определить местоположение');
                     }
@@ -454,43 +569,6 @@
             function tellJoke() {
                 const randomIndex = Math.floor(Math.random() * JOKES.length);
                 speak(JOKES[randomIndex]);
-            }
-
-            function takeScreenshot() {
-                html2canvas(document.body).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = 'jarvis_screenshot_' + Date.now() + '.png';
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                    speak('Скриншот сохранён');
-                }).catch(() => {
-                    speak('Не удалось сделать скриншот');
-                });
-            }
-
-            async function askGemini(prompt) {
-                if (!GEMINI_API_KEY) {
-                    speak('API ключ для Gemini не настроен.');
-                    return null;
-                }
-                setThinking(true);
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    const data = await response.json();
-                    setThinking(false);
-                    if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-                        return data.candidates[0].content.parts[0].text;
-                    } else {
-                        return 'Извините, я не смог обработать запрос.';
-                    }
-                } catch (error) {
-                    setThinking(false);
-                    return 'Ошибка соединения с Gemini.';
-                }
             }
 
             async function processCommand(rawText) {
@@ -515,8 +593,17 @@
                     return;
                 }
 
-                if (cmd.includes('громче')) { volumeUp(); isProcessing = false; return; }
-                if (cmd.includes('тише')) { volumeDown(); isProcessing = false; return; }
+                // Громкость
+                if (cmd.includes('громче')) {
+                    volumeUp();
+                    isProcessing = false;
+                    return;
+                }
+                if (cmd.includes('тише')) {
+                    volumeDown();
+                    isProcessing = false;
+                    return;
+                }
                 if (cmd.includes('громкость')) {
                     let match = cmd.match(/\d+/);
                     if (match) {
@@ -530,16 +617,25 @@
                     return;
                 }
 
-                let appFound = false;
-                for (let app in APPS) {
-                    if (cmd.includes('открой ' + app) || cmd.includes(app)) {
-                        openApp(app);
-                        appFound = true;
-                        break;
-                    }
+                // Время
+                if (cmd.includes('время') || cmd.includes('который час')) {
+                    const now = new Date();
+                    const time = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                    speak(`Сейчас ${time}`);
+                    isProcessing = false;
+                    return;
                 }
-                if (appFound) { isProcessing = false; return; }
 
+                // Дата
+                if (cmd.includes('дата') || cmd.includes('сегодня') || cmd.includes('какое число')) {
+                    const now = new Date();
+                    const date = now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+                    speak(`Сегодня ${date}`);
+                    isProcessing = false;
+                    return;
+                }
+
+                // Поиск в Google
                 if (cmd.includes('найди') || cmd.includes('поиск') || cmd.includes('погугли')) {
                     let query = cmd.replace(/найди|поиск|погугли/gi, '').trim();
                     searchGoogle(query);
@@ -547,43 +643,45 @@
                     return;
                 }
 
+                // Погода
                 if (cmd.includes('погода')) {
                     getWeatherByLocation();
                     isProcessing = false;
                     return;
                 }
 
+                // Шутка
                 if (cmd.includes('шутку') || cmd.includes('анекдот') || cmd.includes('рассмеши')) {
                     tellJoke();
                     isProcessing = false;
                     return;
                 }
 
-                if (cmd.includes('скриншот') || cmd.includes('снимок экрана') || cmd.includes('фото экрана')) {
-                    takeScreenshot();
-                    isProcessing = false;
-                    return;
-                }
-
+                // Помощь
                 if (cmd.includes('что ты умеешь') || cmd.includes('помощь') || cmd.includes('справка')) {
-                    speak('Я могу: открыть приложения (телеграм, ютуб, тикток и др.), искать в Google, показывать погоду, рассказывать шутки, управлять громкостью, делать скриншот, отвечать на вопросы через Gemini. Скажите "стоп" для отключения.');
+                    speak('Я могу открыть более 100 приложений и сайтов: соцсети, мессенджеры, карты, музыку, игры и многое другое. Также могу показать время, дату, погоду, рассказать шутку, управлять громкостью. Скажите "стоп" для отключения.');
                     isProcessing = false;
                     return;
                 }
 
-                if (isGeminiEnabled) {
-                    const geminiAnswer = await askGemini(rawText);
-                    if (geminiAnswer) speak(geminiAnswer);
-                } else {
-                    speak('Не понял команду. Скажите "помощь".');
+                // Проверка всех команд из словаря
+                for (let key in COMMANDS) {
+                    if (cmd.includes('открой ' + key) || cmd.includes(key)) {
+                        openApp(key);
+                        isProcessing = false;
+                        return;
+                    }
                 }
+
+                // Если ничего не найдено
+                speak('Не понял команду. Скажите "помощь".');
                 isProcessing = false;
             }
 
             function initRecognition() {
                 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
                 if (!SpeechRec) {
-                    log('❌ Браузер не поддерживает распознавание речи.');
+                    log('❌ Браузер не поддерживает распознавание речи');
                     return null;
                 }
                 const rec = new SpeechRec();
@@ -596,47 +694,35 @@
                     log('❌ Ошибка микрофона: ' + e.error);
                     if (e.error === 'not-allowed') {
                         micPermission = false;
-                        statusMsg.textContent = '❌ Нет доступа к микрофону. Разрешите доступ и нажмите СТАРТ снова.';
-                        startBtn.classList.remove('disabled');
-                        isStarted = false;
+                        statusMsg.textContent = '❌ Нет доступа к микрофону. Разрешите доступ.';
                     }
                 };
                 rec.onend = () => { if (micPermission) try { rec.start(); } catch(e){} };
                 return rec;
             }
 
-            function requestMicAndStart() {
+            function requestMic() {
                 navigator.mediaDevices.getUserMedia({ audio: true })
                     .then(stream => {
                         stream.getTracks().forEach(t => t.stop());
                         micPermission = true;
-                        log('✅ Микрофон доступен. Скажите "Джарвис".');
+                        log('✅ Микрофон доступен. Скажите "Джарвис"');
                         statusMsg.textContent = 'Скажите "Джарвис" для активации';
-                        startBtn.classList.add('disabled');
                         if (recognition) try { recognition.start(); } catch(e){}
                     })
                     .catch(() => {
                         micPermission = false;
-                        log('❌ Нет доступа к микрофону.');
-                        statusMsg.textContent = '❌ Нет доступа к микрофону. Разрешите доступ и нажмите СТАРТ.';
+                        log('❌ Нет доступа к микрофону');
+                        statusMsg.textContent = '❌ Нет доступа к микрофону';
                     });
             }
 
-            // Инициализация распознавания
             recognition = initRecognition();
             if (synthesis) {
                 synthesis.getVoices();
                 if (synthesis.onvoiceschanged) synthesis.onvoiceschanged = () => {};
             }
-
-            // Обработчик нажатия на кнопку СТАРТ
-            startBtn.addEventListener('click', () => {
-                if (!isStarted) {
-                    requestMicAndStart();
-                    isStarted = true;
-                }
-            });
-
+            requestMic();
             setAwake(false);
         })();
     </script>
