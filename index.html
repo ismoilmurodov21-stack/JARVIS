@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>J.A.R.V.I.S + GEMINI AI</title>
+    <title>J.A.R.V.I.S</title>
     <style>
         * {
             margin: 0;
@@ -126,7 +126,7 @@
             let micPermission = false;
             let currentVolume = 1.0;
             let isProcessing = false;
-            let isGeminiEnabled = !!GEMINI_API_KEY; // агар калид дошта бошам, Gemini фаъол аст
+            let isGeminiEnabled = !!GEMINI_API_KEY;
 
             // ======================== 40+ БАРНОМАҲО ========================
             const APPS = {
@@ -296,7 +296,6 @@
                 statusMsg.textContent = msg;
             }
 
-            // Голосовой вывод
             function speak(text) {
                 if (!synthesis) {
                     log('Синтез речи недоступен');
@@ -327,7 +326,6 @@
                 synthesis.speak(utterance);
             }
 
-            // Танзими садо
             function setVolume(level) {
                 if (level < 0) level = 0;
                 if (level > 1) level = 1;
@@ -343,7 +341,6 @@
                 setVolume(currentVolume - 0.1);
             }
 
-            // Индикатор
             function setAwake(state) {
                 isAwake = state;
                 led.classList.toggle('awake', state);
@@ -359,7 +356,6 @@
                 }
             }
 
-            // Кушодани барнома
             function openApp(appName) {
                 const key = appName.toLowerCase();
                 for (let k in APPS) {
@@ -373,7 +369,6 @@
                 return false;
             }
 
-            // Ҷустуҷӯ дар Google
             function searchGoogle(query) {
                 if (query) {
                     window.open('https://www.google.com/search?q=' + encodeURIComponent(query), '_blank');
@@ -383,7 +378,6 @@
                 }
             }
 
-            // Обу ҳаво
             function getWeatherByLocation() {
                 if (!navigator.geolocation) {
                     speak('Геолокация не поддерживается');
@@ -420,13 +414,11 @@
                 );
             }
 
-            // Шутка
             function tellJoke() {
                 const randomIndex = Math.floor(Math.random() * JOKES.length);
                 speak(JOKES[randomIndex]);
             }
 
-            // Скриншот
             function takeScreenshot() {
                 html2canvas(document.body).then(canvas => {
                     const link = document.createElement('a');
@@ -439,48 +431,37 @@
                 });
             }
 
-            // Функсияи муошират бо Gemini AI
             async function askGemini(prompt) {
                 if (!GEMINI_API_KEY) {
-                    speak('API ключ для Gemini не настроен. Пожалуйста, добавьте его в код.');
+                    speak('API ключ для Gemini не настроен.');
                     return null;
                 }
                 setThinking(true);
                 try {
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            contents: [{
-                                parts: [{ text: prompt }]
-                            }]
-                        })
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                     });
                     const data = await response.json();
                     setThinking(false);
                     if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
                         return data.candidates[0].content.parts[0].text;
                     } else {
-                        console.error('Ошибка Gemini:', data);
                         return 'Извините, я не смог обработать запрос.';
                     }
                 } catch (error) {
                     setThinking(false);
-                    console.error('Gemini fetch error:', error);
                     return 'Ошибка соединения с Gemini.';
                 }
             }
 
-            // Обработка команд
             async function processCommand(rawText) {
                 if (!rawText || isProcessing) return;
                 isProcessing = true;
                 const cmd = rawText.toLowerCase().trim();
                 log('Распознано: ' + rawText);
 
-                // Пробуждение
                 if (!isAwake) {
                     if (cmd.includes(WAKE_WORD)) {
                         setAwake(true);
@@ -490,7 +471,6 @@
                     return;
                 }
 
-                // Стоп
                 if (cmd.includes('стоп') || cmd.includes('хватит') || cmd.includes('замолчи')) {
                     setAwake(false);
                     speak('Отключаюсь.');
@@ -498,17 +478,8 @@
                     return;
                 }
 
-                // Громкость
-                if (cmd.includes('громче')) {
-                    volumeUp();
-                    isProcessing = false;
-                    return;
-                }
-                if (cmd.includes('тише')) {
-                    volumeDown();
-                    isProcessing = false;
-                    return;
-                }
+                if (cmd.includes('громче')) { volumeUp(); isProcessing = false; return; }
+                if (cmd.includes('тише')) { volumeDown(); isProcessing = false; return; }
                 if (cmd.includes('громкость')) {
                     let match = cmd.match(/\d+/);
                     if (match) {
@@ -522,7 +493,6 @@
                     return;
                 }
 
-                // Открытие приложений
                 let appFound = false;
                 for (let app in APPS) {
                     if (cmd.includes('открой ' + app) || cmd.includes(app)) {
@@ -531,12 +501,8 @@
                         break;
                     }
                 }
-                if (appFound) {
-                    isProcessing = false;
-                    return;
-                }
+                if (appFound) { isProcessing = false; return; }
 
-                // Поиск
                 if (cmd.includes('найди') || cmd.includes('поиск') || cmd.includes('погугли')) {
                     let query = cmd.replace(/найди|поиск|погугли/gi, '').trim();
                     searchGoogle(query);
@@ -544,64 +510,51 @@
                     return;
                 }
 
-                // Погода
                 if (cmd.includes('погода')) {
                     getWeatherByLocation();
                     isProcessing = false;
                     return;
                 }
 
-                // Шутка
                 if (cmd.includes('шутку') || cmd.includes('анекдот') || cmd.includes('рассмеши')) {
                     tellJoke();
                     isProcessing = false;
                     return;
                 }
 
-                // Скриншот
                 if (cmd.includes('скриншот') || cmd.includes('снимок экрана') || cmd.includes('фото экрана')) {
                     takeScreenshot();
                     isProcessing = false;
                     return;
                 }
 
-                // Помощь
                 if (cmd.includes('что ты умеешь') || cmd.includes('помощь') || cmd.includes('справка')) {
-                    speak('Я могу открыть более 40 приложений, искать в Google, показать погоду по местоположению, рассказать шутку, управлять громкостью, сделать скриншот. Если подключён Gemini, я отвечу на любые вопросы. Скажите "стоп" для отключения.');
+                    speak('Я могу: открыть приложения (телеграм, ютуб, тикток и др.), искать в Google, показывать погоду, рассказывать шутки, управлять громкостью, делать скриншот, отвечать на вопросы через Gemini. Скажите "стоп" для отключения.');
                     isProcessing = false;
                     return;
                 }
 
-                // Агар команда шинохта нашуд ва Gemini фаъол аст, ба Gemini фирист
                 if (isGeminiEnabled) {
                     const geminiAnswer = await askGemini(rawText);
-                    if (geminiAnswer) {
-                        speak(geminiAnswer);
-                    }
+                    if (geminiAnswer) speak(geminiAnswer);
                 } else {
-                    speak('Не понял команду, сэр. Скажите "помощь" для списка команд.');
+                    speak('Не понял команду. Скажите "помощь".');
                 }
                 isProcessing = false;
             }
 
-            // ======================== РАСПОЗНАВАНИЕ РЕЧИ ========================
             function initRecognition() {
                 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
                 if (!SpeechRec) {
-                    log('❌ Браузер не поддерживает распознавание речи. Используйте Chrome, Edge или Safari.');
+                    log('❌ Браузер не поддерживает распознавание речи.');
                     return null;
                 }
-
                 const rec = new SpeechRec();
                 rec.continuous = false;
                 rec.interimResults = false;
                 rec.lang = 'ru-RU';
-
                 rec.onstart = () => log('🎤 Микрофон активирован');
-                rec.onresult = (e) => {
-                    const transcript = e.results[0][0].transcript;
-                    processCommand(transcript);
-                };
+                rec.onresult = (e) => processCommand(e.results[0][0].transcript);
                 rec.onerror = (e) => {
                     log('❌ Ошибка микрофона: ' + e.error);
                     if (e.error === 'not-allowed') {
@@ -609,42 +562,31 @@
                         statusMsg.textContent = '❌ Нет доступа к микрофону. Разрешите доступ и обновите страницу.';
                     }
                 };
-                rec.onend = () => {
-                    if (micPermission) {
-                        try { rec.start(); } catch (e) {}
-                    }
-                };
+                rec.onend = () => { if (micPermission) try { rec.start(); } catch(e){} };
                 return rec;
             }
 
-            // Запрос микрофона
             function requestMicAndStart() {
                 navigator.mediaDevices.getUserMedia({ audio: true })
                     .then(stream => {
                         stream.getTracks().forEach(t => t.stop());
                         micPermission = true;
-                        log('✅ Микрофон доступен. Скажите "Джарвис" для активации.');
+                        log('✅ Микрофон доступен. Скажите "Джарвис".');
                         statusMsg.textContent = 'Скажите "Джарвис" для активации';
-                        if (recognition) {
-                            try { recognition.start(); } catch (e) {}
-                        }
+                        if (recognition) try { recognition.start(); } catch(e){}
                     })
-                    .catch((err) => {
+                    .catch(() => {
                         micPermission = false;
-                        log('❌ Нет доступа к микрофону: ' + err.message);
-                        statusMsg.textContent = '❌ Нет доступа к микрофону. Разрешите доступ и обновите страницу.';
+                        log('❌ Нет доступа к микрофону.');
+                        statusMsg.textContent = '❌ Нет доступа к микрофону. Разрешите доступ.';
                     });
             }
 
-            // Инициализация
             recognition = initRecognition();
             if (synthesis) {
                 synthesis.getVoices();
-                if (synthesis.onvoiceschanged) {
-                    synthesis.onvoiceschanged = () => {};
-                }
+                if (synthesis.onvoiceschanged) synthesis.onvoiceschanged = () => {};
             }
-
             requestMicAndStart();
             setAwake(false);
         })();
