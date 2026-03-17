@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>J.A.R.V.I.S — Полное управление</title>
+    <title>ALI — Голосовой помощник</title>
     <style>
         * {
             margin: 0;
@@ -22,7 +22,7 @@
             font-family: 'Segoe UI', 'Arial Black', 'Impact', sans-serif;
         }
 
-        .jarvis-core {
+        .ali-core {
             width: 100vw;
             height: 100vh;
             display: flex;
@@ -33,7 +33,7 @@
             position: relative;
         }
 
-        .jarvis-name {
+        .ali-name {
             font-size: clamp(3rem, 20vw, 12rem);
             font-weight: 900;
             color: #00aeff;
@@ -99,8 +99,8 @@
     </style>
 </head>
 <body>
-    <div class="jarvis-core">
-        <div class="jarvis-name">J.A.R.V.I.S</div>
+    <div class="ali-core">
+        <div class="ali-name">ALI</div>
         <div class="status-led" id="statusLed"></div>
         <div class="hidden-message" id="statusMessage"></div>
     </div>
@@ -108,11 +108,8 @@
     <script>
         (function() {
             // ======================== КОНФИГУРАЦИЯ ========================
-            const WAKE_WORD = 'джарвис';
-            
-            // API ключи (замените на свои)
+            const WAKE_WORD = 'али';  // "али" барои фаъолсозӣ
             const WEATHER_API_KEY = 'dc3d3f6afb0b60d1d0cc77071aa9152f'; // openweathermap
-            const GEMINI_API_KEY = ''; // опционально
 
             // ======================== ЭЛЕМЕНТЫ ========================
             const led = document.getElementById('statusLed');
@@ -126,13 +123,14 @@
             let currentVolume = 1.0;
             let isProcessing = false;
 
-            // ======================== 100+ КОМАНД ДЛЯ ТЕЛЕФОНА ========================
+            // ======================== 100+ КОМАНД ========================
             const COMMANDS = {
-                // ==== СОЦИАЛЬНЫЕ СЕТИ (20) ====
+                // ==== СОЦИАЛЬНЫЕ СЕТИ ====
                 'instagram': 'https://instagram.com',
                 'инстаграм': 'https://instagram.com',
                 'tik tok': 'https://tiktok.com',
                 'тикток': 'https://tiktok.com',
+                'tiktok': 'https://tiktok.com',
                 'youtube': 'https://youtube.com',
                 'ютуб': 'https://youtube.com',
                 'telegram': 'https://web.telegram.org',
@@ -166,11 +164,10 @@
                 'flickr': 'https://flickr.com',
                 'фликр': 'https://flickr.com',
 
-                // ==== МЕССЕНДЖЕРЫ (10) ====
+                // ==== МЕССЕНДЖЕРЫ ====
                 'whatsapp бизнес': 'https://web.whatsapp.com',
                 'telegram бизнес': 'https://web.telegram.org',
                 'wechat': 'https://wechat.com',
-                'сигнал': 'https://signal.org',
                 'тайни': 'https://threema.ch',
                 'element': 'https://element.io',
                 'ток': 'https://talk.more',
@@ -178,7 +175,7 @@
                 'скайп': 'https://web.skype.com',
                 'skype': 'https://web.skype.com',
 
-                // ==== ПОИСК И ИНТЕРНЕТ (10) ====
+                // ==== ПОИСК И ИНТЕРНЕТ ====
                 'google': 'https://google.com',
                 'гугл': 'https://google.com',
                 'yandex': 'https://yandex.ru',
@@ -190,14 +187,14 @@
                 'найди': 'https://google.com/search?q=',
                 'погугли': 'https://google.com/search?q=',
 
-                // ==== КАРТЫ И НАВИГАЦИЯ (5) ====
+                // ==== КАРТЫ И НАВИГАЦИЯ ====
                 'карты': 'https://maps.google.com',
                 'google maps': 'https://maps.google.com',
                 'навигатор': 'https://maps.google.com',
                 'где я': 'https://maps.google.com',
                 'местоположение': 'https://maps.google.com',
 
-                // ==== ВИДЕО И МУЗЫКА (10) ====
+                // ==== ВИДЕО И МУЗЫКА ====
                 'spotify': 'https://open.spotify.com',
                 'спотифай': 'https://open.spotify.com',
                 'apple music': 'https://music.apple.com',
@@ -209,91 +206,91 @@
                 'twitch': 'https://twitch.tv',
                 'твич': 'https://twitch.tv',
 
-                // ==== ФИЛЬМЫ И СЕРИАЛЫ (5) ====
+                // ==== ФИЛЬМЫ И СЕРИАЛЫ ====
                 'netflix': 'https://netflix.com',
                 'нетфликс': 'https://netflix.com',
                 'ivi': 'https://ivi.ru',
                 'кион': 'https://kion.ru',
                 'окко': 'https://okko.tv',
 
-                // ==== ИГРЫ (5) ====
+                // ==== ИГРЫ ====
                 'steam': 'https://store.steampowered.com',
                 'стим': 'https://store.steampowered.com',
                 'epic games': 'https://store.epicgames.com',
                 'эпик': 'https://store.epicgames.com',
                 'origin': 'https://origin.com',
 
-                // ==== НОВОСТИ (5) ====
+                // ==== НОВОСТИ ====
                 'новости': 'https://news.google.com',
                 'ria': 'https://ria.ru',
                 'bbc': 'https://bbc.com',
                 'cnn': 'https://cnn.com',
                 'медуза': 'https://meduza.io',
 
-                // ==== ПОКУПКИ (5) ====
+                // ==== ПОКУПКИ ====
                 'amazon': 'https://amazon.com',
                 'амазон': 'https://amazon.com',
                 'ebay': 'https://ebay.com',
                 'алиэкспресс': 'https://aliexpress.com',
                 'wildberries': 'https://wildberries.ru',
 
-                // ==== БАНКИ И ФИНАНСЫ (5) ====
+                // ==== БАНКИ И ФИНАНСЫ ====
                 'сбербанк': 'https://sberbank.ru',
                 'тинькофф': 'https://tinkoff.ru',
                 'альфа': 'https://alfabank.ru',
                 'втб': 'https://vtb.ru',
                 'paypal': 'https://paypal.com',
 
-                // ==== ТРАНСПОРТ (5) ====
+                // ==== ТРАНСПОРТ ====
                 'uber': 'https://uber.com',
                 'yandex taxi': 'https://taxi.yandex.ru',
                 'яндекс такси': 'https://taxi.yandex.ru',
                 'citymobil': 'https://citymobil.ru',
                 'ситимобил': 'https://citymobil.ru',
 
-                // ==== ЕДА (5) ====
+                // ==== ЕДА ====
                 'delivery club': 'https://delivery-club.ru',
                 'яндекс еда': 'https://eda.yandex.ru',
                 'самокат': 'https://samokat.ru',
                 'беру': 'https://beru.ru',
                 'озон': 'https://ozon.ru',
 
-                // ==== ОБРАЗОВАНИЕ (5) ====
+                // ==== ОБРАЗОВАНИЕ ====
                 'wikipedia': 'https://wikipedia.org',
                 'википедия': 'https://wikipedia.org',
                 'coursera': 'https://coursera.org',
                 'udemy': 'https://udemy.com',
                 'stepik': 'https://stepik.org',
 
-                // ==== РАБОТА (5) ====
+                // ==== РАБОТА ====
                 'github': 'https://github.com',
                 'гитхаб': 'https://github.com',
                 'gitlab': 'https://gitlab.com',
                 'stackoverflow': 'https://stackoverflow.com',
                 'хабр': 'https://habr.com',
 
-                // ==== ЗДОРОВЬЕ (5) ====
+                // ==== ЗДОРОВЬЕ ====
                 'медси': 'https://medsi.ru',
                 'инвитро': 'https://invitro.ru',
                 'емедицина': 'https://emc.ru',
                 'зож': 'https://zdorovie.ru',
                 'спорт': 'https://sport.ru',
 
-                // ==== ДОМ (5) ====
+                // ==== ДОМ ====
                 'юла': 'https://youla.ru',
                 'авито': 'https://avito.ru',
                 'циан': 'https://cian.ru',
                 'домклик': 'https://domclick.ru',
                 'жкх': 'https://gkukh.ru',
 
-                // ==== ГОСУСЛУГИ (5) ====
+                // ==== ГОСУСЛУГИ ====
                 'госуслуги': 'https://gosuslugi.ru',
                 'налог': 'https://nalog.ru',
                 'пфр': 'https://pfr.gov.ru',
                 'фсс': 'https://fss.ru',
-                'гибдд': 'https://гибдд.рф',
+                'гибдд': 'https://xn--90adear.xn--p1ai/',
 
-                // ==== ТЕХНИКА (5) ====
+                // ==== ТЕХНИКА ====
                 'bluetooth': 'bluetooth',
                 'вайфай': 'wifi',
                 'фонарик': 'flashlight',
@@ -441,7 +438,7 @@
                     if (maleVoice) utterance.voice = maleVoice;
                 }
 
-                utterance.onstart = () => log('JARVIS: ' + text);
+                utterance.onstart = () => log('ALI: ' + text);
                 utterance.onerror = (e) => log('Ошибка речи: ' + e.error);
                 synthesis.speak(utterance);
             }
@@ -563,9 +560,10 @@
                 log('Распознано: ' + rawText);
 
                 if (!isAwake) {
+                    // ВАЖНО: проверяем "али" (WAKE_WORD)
                     if (cmd.includes(WAKE_WORD)) {
                         setAwake(true);
-                        speak('Слушаю, сэр.');
+                        speak('Слушаю, Али?');
                     }
                     isProcessing = false;
                     return;
@@ -614,7 +612,6 @@
                     return;
                 }
 
-                // Погода — отдельная функция, не из словаря
                 if (cmd.includes('погода')) {
                     getWeatherByLocation();
                     isProcessing = false;
@@ -633,7 +630,7 @@
                     return;
                 }
 
-                // Проверка всех команд из словаря (кроме погоды — её уже обработали выше)
+                // Проверка всех команд из словаря
                 for (let key in COMMANDS) {
                     if (cmd.includes('открой ' + key) || cmd.includes(key)) {
                         openApp(key);
@@ -674,8 +671,8 @@
                     .then(stream => {
                         stream.getTracks().forEach(t => t.stop());
                         micPermission = true;
-                        log('✅ Микрофон доступен. Скажите "Джарвис"');
-                        statusMsg.textContent = 'Скажите "Джарвис" для активации';
+                        log('✅ Микрофон доступен. Скажите "Али" для активации.');
+                        statusMsg.textContent = 'Скажите "Али" для активации';
                         if (recognition) try { recognition.start(); } catch(e){}
                     })
                     .catch(() => {
