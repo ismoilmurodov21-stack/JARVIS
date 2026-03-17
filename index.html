@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>J.A.R.V.I.S</title>
+    <title>J.A.R.V.I.S + GEMINI AI</title>
     <style>
         * {
             margin: 0;
@@ -33,7 +33,6 @@
             position: relative;
         }
 
-        /* Танҳо номи JARVIS */
         .jarvis-name {
             font-size: clamp(3rem, 20vw, 12rem);
             font-weight: 900;
@@ -52,7 +51,6 @@
             100% { text-shadow: 0 0 40px #006eff, 2px 2px 10px black; }
         }
 
-        /* Индикатор ҳолат */
         .status-led {
             width: 20px;
             height: 20px;
@@ -81,7 +79,6 @@
             100% { opacity: 1; transform: scale(1); }
         }
 
-        /* Паёми пинҳон барои корбар */
         .hidden-message {
             position: absolute;
             bottom: 20px;
@@ -96,6 +93,7 @@
             padding: 8px 16px;
             border-radius: 40px;
             border: 1px solid #3a6a8f;
+            z-index: 10;
         }
     </style>
     <!-- html2canvas барои скриншот -->
@@ -103,30 +101,34 @@
 </head>
 <body>
     <div class="jarvis-core">
-        <div class="jarvis-name" id="jarvisName">J.A.R.V.I.S</div>
+        <div class="jarvis-name">J.A.R.V.I.S</div>
         <div class="status-led" id="statusLed"></div>
-        <div class="hidden-message" id="statusMessage">Инициализация...</div>
+        <div class="hidden-message" id="statusMessage"></div>
     </div>
 
     <script>
         (function() {
-            // ======================== КОНФИГУРАЦИЯ 100% ========================
-            const WAKE_WORD = 'джарвис';                 // калимаи бедоркунӣ
-            const WEATHER_API_KEY = '0b1b6e1e6b3b3d5e7b8f8d9a9c0d1e2f'; // ключи OpenWeatherMap (демо, метавонад кор кунад)
+            // ======================== КОНФИГУРАТСИЯ ========================
+            const WAKE_WORD = 'джарвис';
+            const WEATHER_API_KEY = '0b1b6e1e6b3b3d5e7b8f8d9a9c0d1e2f'; // демо-ключ OpenWeatherMap
             
-            // ======================== ЭЛЕМЕНТЫ ========================
+            // API Key барои Gemini AI (аз ҷониби корбар дода шудааст)
+            const GEMINI_API_KEY = 'AIzaSyCzTIi_qm933rxp3HAxMYurnQmZIfAbtqg';
+
+            // ======================== ЭЛЕМЕНТҲО ========================
             const led = document.getElementById('statusLed');
             const statusMsg = document.getElementById('statusMessage');
 
             // ======================== ТАҒЙИРЁБАНДАҲО ========================
-            let isAwake = false;           // пас аз "Джарвис" фаъол аст
+            let isAwake = false;
             let recognition = null;
             let synthesis = window.speechSynthesis;
             let micPermission = false;
-            let currentVolume = 1.0;        // громкость аз 0 то 1
-            let isProcessing = false;        // барои пешгирии такрори коркард
+            let currentVolume = 1.0;
+            let isProcessing = false;
+            let isGeminiEnabled = !!GEMINI_API_KEY; // агар калид дошта бошам, Gemini фаъол аст
 
-            // ======================== РӮЙХАТИ 20+ БАРНОМАҲО ========================
+            // ======================== 40+ БАРНОМАҲО ========================
             const APPS = {
                 'telegram': 'https://web.telegram.org',
                 'телеграм': 'https://web.telegram.org',
@@ -325,13 +327,12 @@
                 synthesis.speak(utterance);
             }
 
-            // Управление громкостью
+            // Танзими садо
             function setVolume(level) {
                 if (level < 0) level = 0;
                 if (level > 1) level = 1;
                 currentVolume = level;
-                log('Громкость ' + Math.round(level*100) + '%');
-                speak('Громкость ' + Math.round(level*100) + ' процентов');
+                speak('Громкость ' + Math.round(level*100) + '%');
             }
 
             function volumeUp() {
@@ -342,7 +343,7 @@
                 setVolume(currentVolume - 0.1);
             }
 
-            // Обновление индикатора
+            // Индикатор
             function setAwake(state) {
                 isAwake = state;
                 led.classList.toggle('awake', state);
@@ -358,7 +359,7 @@
                 }
             }
 
-            // Открытие приложения
+            // Кушодани барнома
             function openApp(appName) {
                 const key = appName.toLowerCase();
                 for (let k in APPS) {
@@ -372,7 +373,7 @@
                 return false;
             }
 
-            // Поиск в Google
+            // Ҷустуҷӯ дар Google
             function searchGoogle(query) {
                 if (query) {
                     window.open('https://www.google.com/search?q=' + encodeURIComponent(query), '_blank');
@@ -382,7 +383,7 @@
                 }
             }
 
-            // Погода по местоположению
+            // Обу ҳаво
             function getWeatherByLocation() {
                 if (!navigator.geolocation) {
                     speak('Геолокация не поддерживается');
@@ -438,14 +439,48 @@
                 });
             }
 
+            // Функсияи муошират бо Gemini AI
+            async function askGemini(prompt) {
+                if (!GEMINI_API_KEY) {
+                    speak('API ключ для Gemini не настроен. Пожалуйста, добавьте его в код.');
+                    return null;
+                }
+                setThinking(true);
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [{ text: prompt }]
+                            }]
+                        })
+                    });
+                    const data = await response.json();
+                    setThinking(false);
+                    if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+                        return data.candidates[0].content.parts[0].text;
+                    } else {
+                        console.error('Ошибка Gemini:', data);
+                        return 'Извините, я не смог обработать запрос.';
+                    }
+                } catch (error) {
+                    setThinking(false);
+                    console.error('Gemini fetch error:', error);
+                    return 'Ошибка соединения с Gemini.';
+                }
+            }
+
             // Обработка команд
-            function processCommand(rawText) {
+            async function processCommand(rawText) {
                 if (!rawText || isProcessing) return;
                 isProcessing = true;
                 const cmd = rawText.toLowerCase().trim();
                 log('Распознано: ' + rawText);
 
-                // Пробуждение по wake word
+                // Пробуждение
                 if (!isAwake) {
                     if (cmd.includes(WAKE_WORD)) {
                         setAwake(true);
@@ -455,7 +490,7 @@
                     return;
                 }
 
-                // Команда "стоп" – засыпает
+                // Стоп
                 if (cmd.includes('стоп') || cmd.includes('хватит') || cmd.includes('замолчи')) {
                     setAwake(false);
                     speak('Отключаюсь.');
@@ -463,7 +498,7 @@
                     return;
                 }
 
-                // Управление громкостью
+                // Громкость
                 if (cmd.includes('громче')) {
                     volumeUp();
                     isProcessing = false;
@@ -487,7 +522,7 @@
                     return;
                 }
 
-                // Открытие приложений (ищем ключевые слова)
+                // Открытие приложений
                 let appFound = false;
                 for (let app in APPS) {
                     if (cmd.includes('открой ' + app) || cmd.includes(app)) {
@@ -532,13 +567,20 @@
 
                 // Помощь
                 if (cmd.includes('что ты умеешь') || cmd.includes('помощь') || cmd.includes('справка')) {
-                    speak('Я могу открыть более 40 приложений: telegram, tiktok, youtube, instagram, vk, facebook, twitter, whatsapp, snapchat, pinterest, reddit, linkedin, github, steam, epic games, spotify, netflix, twitch, discord, zoom и другие. Могу искать в Google, показать погоду по вашему местоположению, рассказать больше 100 шуток, управлять громкостью, сделать скриншот. Я всегда слушаю после слова "Джарвис". Скажите "стоп" чтобы усыпить меня.');
+                    speak('Я могу открыть более 40 приложений, искать в Google, показать погоду по местоположению, рассказать шутку, управлять громкостью, сделать скриншот. Если подключён Gemini, я отвечу на любые вопросы. Скажите "стоп" для отключения.');
                     isProcessing = false;
                     return;
                 }
 
-                // Если ничего не подошло
-                speak('Не понял команду, сэр.');
+                // Агар команда шинохта нашуд ва Gemini фаъол аст, ба Gemini фирист
+                if (isGeminiEnabled) {
+                    const geminiAnswer = await askGemini(rawText);
+                    if (geminiAnswer) {
+                        speak(geminiAnswer);
+                    }
+                } else {
+                    speak('Не понял команду, сэр. Скажите "помощь" для списка команд.');
+                }
                 isProcessing = false;
             }
 
@@ -564,7 +606,7 @@
                     log('❌ Ошибка микрофона: ' + e.error);
                     if (e.error === 'not-allowed') {
                         micPermission = false;
-                        statusMsg.textContent = '❌ Нет доступа к микрофону. Разрешите доступ в настройках браузера и обновите страницу.';
+                        statusMsg.textContent = '❌ Нет доступа к микрофону. Разрешите доступ и обновите страницу.';
                     }
                 };
                 rec.onend = () => {
@@ -575,7 +617,7 @@
                 return rec;
             }
 
-            // ======================== ЗАПРОС МИКРОФОНА ========================
+            // Запрос микрофона
             function requestMicAndStart() {
                 navigator.mediaDevices.getUserMedia({ audio: true })
                     .then(stream => {
@@ -594,7 +636,7 @@
                     });
             }
 
-            // ======================== ИНИЦИАЛИЗАЦИЯ ========================
+            // Инициализация
             recognition = initRecognition();
             if (synthesis) {
                 synthesis.getVoices();
@@ -603,10 +645,7 @@
                 }
             }
 
-            // Сразу запрашиваем микрофон без клика
             requestMicAndStart();
-
-            // Начальное состояние
             setAwake(false);
         })();
     </script>
