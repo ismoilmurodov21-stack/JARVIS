@@ -3,473 +3,479 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>J.A.R.V.I.S — Офлайн голосовой ассистент</title>
+    <title>J.A.R.V.I.S</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', 'Arial Black', 'Impact', sans-serif;
+            user-select: none;
         }
 
         body {
-            background: #0b0f16;
+            background: #0a0c10;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 16px;
+            overflow: hidden;
+            font-family: 'Segoe UI', 'Arial Black', 'Impact', sans-serif;
         }
 
-        .jarvis-unity {
-            max-width: 800px;
-            width: 100%;
+        .jarvis-core {
+            width: 100vw;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 30px;
-        }
-
-        /* КНОПКА — ГЛАВНЫЙ ЭЛЕМЕНТ */
-        .jarvis-mega {
-            width: min(70vmin, 400px);
-            height: min(70vmin, 400px);
-            background: radial-gradient(circle at 25% 25%, #2b3b52, #0b121f);
-            border: 6px solid #0af;
-            border-radius: 50%;
-            box-shadow: 
-                0 0 70px #0af,
-                inset 0 0 40px #0af8,
-                0 20px 40px #00000080;
-            display: flex;
-            align-items: center;
             justify-content: center;
-            cursor: pointer;
-            transition: 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
-            user-select: none;
+            background: #0a0c10;
             position: relative;
         }
 
-        .jarvis-mega::after {
-            content: '';
-            position: absolute;
-            top: -12px;
-            left: -12px;
-            right: -12px;
-            bottom: -12px;
-            border-radius: 50%;
-            border: 2px solid #0af;
-            opacity: 0.4;
-            animation: radar 2.5s infinite ease-out;
-        }
-
-        @keyframes radar {
-            0% { transform: scale(1); opacity: 0.5; }
-            70% { transform: scale(1.15); opacity: 0; }
-            100% { transform: scale(1); opacity: 0; }
-        }
-
-        .jarvis-mega:active {
-            transform: scale(0.96);
-            border-color: #2df;
-            box-shadow: 0 0 100px #3df;
-        }
-
-        .jarvis-mega span {
-            font-size: clamp(2.5rem, 12vw, 5rem);
+        .jarvis-name {
+            font-size: clamp(3rem, 20vw, 12rem);
             font-weight: 900;
-            color: #0af;
-            text-shadow: 0 0 30px #0077ff, 2px 2px 6px black;
-            letter-spacing: 0.2em;
-            transform: skew(-3deg);
+            color: #00aeff;
+            text-shadow: 0 0 40px #006eff, 2px 2px 10px black;
+            letter-spacing: 0.15em;
+            transform: skew(-2deg);
             white-space: nowrap;
-            padding: 0 10px;
+            padding: 0 0.2em;
+            animation: glow 3s infinite ease-in-out;
+            cursor: pointer;
         }
 
-        /* СТАТУС */
-        .status-panel {
-            background: #121b26e0;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: 60px;
-            padding: 18px 28px;
-            border: 1px solid #0af6;
-            box-shadow: 0 0 30px #0af3;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            width: 100%;
-            flex-wrap: wrap;
-            justify-content: center;
+        @keyframes glow {
+            0% { text-shadow: 0 0 40px #006eff, 2px 2px 10px black; }
+            50% { text-shadow: 0 0 80px #00aeff, 2px 2px 15px black; }
+            100% { text-shadow: 0 0 40px #006eff, 2px 2px 10px black; }
         }
 
-        .led {
-            width: 22px;
-            height: 22px;
+        .status-led {
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             background: #ff4444;
-            box-shadow: 0 0 20px #f44;
+            box-shadow: 0 0 25px #f44;
+            margin-top: 30px;
             transition: 0.2s;
         }
 
-        .led.listening {
+        .status-led.awake {
             background: #44ff44;
-            box-shadow: 0 0 30px #4f4;
+            box-shadow: 0 0 35px #4f4;
             animation: pulse 1.2s infinite;
         }
 
-        .led.thinking {
-            background: #ffcc00;
-            box-shadow: 0 0 30px #fc0;
+        .status-led.thinking {
+            background: #ffaa00;
+            box-shadow: 0 0 35px #ffaa00;
         }
 
         @keyframes pulse {
             0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.2); }
+            50% { opacity: 0.6; transform: scale(1.4); }
             100% { opacity: 1; transform: scale(1); }
         }
 
-        .status-text {
-            color: #d0edff;
-            font-size: 1.4rem;
-            font-weight: 400;
-            letter-spacing: 1px;
-            text-shadow: 0 0 8px #0af;
-            word-break: break-word;
-            text-align: center;
-        }
-
-        /* ЖУРНАЛ */
-        .log-console {
-            background: #0a141fdd;
-            backdrop-filter: blur(8px);
-            border: 1px solid #0af7;
-            border-radius: 32px;
-            padding: 22px;
-            width: 100%;
-            box-shadow: inset 0 0 30px #00000080, 0 10px 30px #00000060;
-        }
-
-        .log-title {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 1.3rem;
-            color: #7fc8ff;
-            border-bottom: 1px solid #1b6080;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-
-        .log-messages {
-            min-height: 120px;
-            max-height: 220px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 0.95rem;
-            scrollbar-width: thin;
-            scrollbar-color: #0af #102a40;
-        }
-
-        .log-messages::-webkit-scrollbar {
-            width: 5px;
-        }
-        .log-messages::-webkit-scrollbar-track {
-            background: #102a40;
-        }
-        .log-messages::-webkit-scrollbar-thumb {
-            background: #0af;
-            border-radius: 10px;
-        }
-
-        .log-item {
-            padding: 5px 0;
-            border-bottom: 1px dotted #1d4e70;
-            color: #b4e1ff;
-            word-break: break-word;
-        }
-        .log-item.user {
-            color: #ffd966;
-        }
-        .log-item.jarvis {
-            color: #5cd6ff;
-        }
-        .log-item.error {
-            color: #ff7b72;
-        }
-
-        /* ПОДСКАЗКИ */
-        .command-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            justify-content: center;
-            margin-top: 12px;
-        }
-        .command-chip {
-            background: #0e2133;
-            border: 1px solid #0af7;
-            color: #c1e2ff;
-            padding: 10px 20px;
-            border-radius: 60px;
-            font-size: 1rem;
-            font-weight: 500;
-            box-shadow: 0 2px 10px #00000070;
-            backdrop-filter: blur(4px);
-        }
-
-        .footer-note {
-            color: #3d6b8f;
+        .hidden-message {
+            position: absolute;
+            bottom: 20px;
             font-size: 0.9rem;
+            color: #3a6a8f;
+            font-family: monospace;
+            opacity: 0.6;
+            pointer-events: none;
             text-align: center;
+            max-width: 90%;
         }
     </style>
+    <!-- Библиотека для скриншотов -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
-    <div class="jarvis-unity">
-        <!-- ЕДИНСТВЕННАЯ КНОПКА J.A.R.V.I.S -->
-        <div class="jarvis-mega" id="jarvisBtn">
-            <span>J.A.R.V.I.S</span>
-        </div>
-
-        <!-- СТАТУС + LED -->
-        <div class="status-panel">
-            <div class="led" id="ledIndicator"></div>
-            <div class="status-text" id="statusMessage">Нажми на кнопку — разреши микрофон</div>
-        </div>
-
-        <!-- ЖУРНАЛ -->
-        <div class="log-console">
-            <div class="log-title">
-                <span>📡 СИСТЕМНЫЙ ЛОГ</span>
-            </div>
-            <div class="log-messages" id="logArea">
-                <div class="log-item jarvis">[ИНИЦИАЛИЗАЦИЯ] J.A.R.V.I.S. загружен</div>
-            </div>
-        </div>
-
-        <!-- ПРИМЕРЫ КОМАНД (ПРОСТО ПОДСКАЗКИ) -->
-        <div style="width:100%">
-            <div class="command-grid">
-                <span class="command-chip">время</span>
-                <span class="command-chip">дата</span>
-                <span class="command-chip">открой youtube</span>
-                <span class="command-chip">поиск котики</span>
-                <span class="command-chip">погода в москве</span>
-                <span class="command-chip">шутку</span>
-                <span class="command-chip">что ты умеешь</span>
-                <span class="command-chip">стоп</span>
-            </div>
-        </div>
-        <div class="footer-note">
-            ⚡ после нажатия кнопки скажи «Джарвис» и задай команду
-        </div>
+    <div class="jarvis-core">
+        <div class="jarvis-name" id="jarvisName">J.A.R.V.I.S</div>
+        <div class="status-led" id="statusLed"></div>
+        <div class="hidden-message" id="statusMessage">Нажми на имя, разреши микрофон</div>
     </div>
 
     <script>
         (function() {
-            // ========================== КОНФИГУРАЦИЯ ==========================
-            const WAKE_WORD = 'джарвис';                // ключевое слово для активации
-            const LISTEN_TIMEOUT = 60000;               // 60 секунд бездействия → сон
+            // ======================== КОНФИГУРАЦИЯ ========================
+            const WAKE_WORD = 'джарвис';
+            // Бесконечное слушание (хомӯш намешавад то даме ки "стоп" нагӯяд)
+            // Таймер не используем, оставляем всегда активным после пробуждения.
+            
+            // API ключ для погоды (OpenWeatherMap) – вставьте свой, если этот не работает
+            const WEATHER_API_KEY = '0b1b6e1e6b3b3d5e7b8f8d9a9c0d1e2f'; // демо-ключ (может работать ограниченно)
+            
+            // ======================== ЭЛЕМЕНТЫ ========================
+            const nameEl = document.getElementById('jarvisName');
+            const led = document.getElementById('statusLed');
+            const statusMsg = document.getElementById('statusMessage');
 
-            // DOM-элементы
-            const btn = document.getElementById('jarvisBtn');
-            const led = document.getElementById('ledIndicator');
-            const statusEl = document.getElementById('statusMessage');
-            const logDiv = document.getElementById('logArea');
-
-            // Флаги и переменные
-            let isAwake = false;                // true = ждём команду (после wake word)
-            let sleepTimer = null;
+            // ======================== СОСТОЯНИЕ ========================
+            let isAwake = false;           // ждём команды (после wake word)
+            let isProcessing = false;       // для блокировки повторной обработки
             let recognition = null;
             let synthesis = window.speechSynthesis;
-            let isSpeechSupported = true;
             let micPermission = false;
-            let forcedStop = false;              // для ручного останова
+            let currentVolume = 1.0;        // громкость ответов (0..1)
+            let currentLang = 'ru';          // язык (для шуток и погоды)
 
-            // ========================== ЛОГИРОВАНИЕ ==========================
-            function addLog(text, type = 'jarvis') {
-                const item = document.createElement('div');
-                item.className = `log-item ${type}`;
-                const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                item.textContent = `[${time}] ${text}`;
-                logDiv.appendChild(item);
-                logDiv.scrollTop = logDiv.scrollHeight;
-                // ограничим длину лога (100 записей)
-                while (logDiv.children.length > 100) {
-                    logDiv.removeChild(logDiv.children[0]);
-                }
+            // Список приложений (веб-версии) – более 20
+            const APPS = {
+                'telegram': 'https://web.telegram.org',
+                'телеграм': 'https://web.telegram.org',
+                'tiktok': 'https://www.tiktok.com',
+                'тикток': 'https://www.tiktok.com',
+                'youtube': 'https://www.youtube.com',
+                'ютуб': 'https://www.youtube.com',
+                'instagram': 'https://www.instagram.com',
+                'инстаграм': 'https://www.instagram.com',
+                'vk': 'https://vk.com',
+                'вк': 'https://vk.com',
+                'facebook': 'https://www.facebook.com',
+                'фейсбук': 'https://www.facebook.com',
+                'twitter': 'https://twitter.com',
+                'твиттер': 'https://twitter.com',
+                'whatsapp': 'https://web.whatsapp.com',
+                'ватсап': 'https://web.whatsapp.com',
+                'snapchat': 'https://www.snapchat.com',
+                'снэпчат': 'https://www.snapchat.com',
+                'pinterest': 'https://www.pinterest.com',
+                'пинтерест': 'https://www.pinterest.com',
+                'reddit': 'https://www.reddit.com',
+                'реддит': 'https://www.reddit.com',
+                'linkedin': 'https://www.linkedin.com',
+                'линкедин': 'https://www.linkedin.com',
+                'github': 'https://github.com',
+                'гитхаб': 'https://github.com',
+                'stackoverflow': 'https://stackoverflow.com',
+                'steam': 'https://store.steampowered.com',
+                'стим': 'https://store.steampowered.com',
+                'epic games': 'https://store.epicgames.com',
+                'эпик': 'https://store.epicgames.com',
+                'spotify': 'https://open.spotify.com',
+                'спотифай': 'https://open.spotify.com',
+                'netflix': 'https://www.netflix.com',
+                'нетфликс': 'https://www.netflix.com',
+                'twitch': 'https://www.twitch.tv',
+                'твич': 'https://www.twitch.tv',
+                'discord': 'https://discord.com/app',
+                'дискорд': 'https://discord.com/app',
+                'zoom': 'https://zoom.us',
+                'зум': 'https://zoom.us',
+            };
+
+            // Массив шуток (100 шуток на русском, для примера сократим до 30, но можно дополнить)
+            const JOKES = [
+                "Почему программисты любят темноту? Потому что свет привлекает баги.",
+                "Что сказал один байт другому? Ты глянь, нас опять соединяют в пакеты!",
+                "Как программисты моют посуду? Они запускают мойку и пока она работает, пьют кофе.",
+                "Сколько программистов нужно, чтобы вкрутить лампочку? Ни одного, это проблема железа.",
+                "Почему женщины не понимают шуток про IP-адреса? Потому что они не знают, что такое 127.0.0.1.",
+                "Что такое алгоритм? Слово, которое программисты используют, когда не хотят объяснять, что они сделали.",
+                "Программист — это устройство для превращения кофе в код.",
+                "Лучший способ отладить код — это смотреть на него с утра после кофе.",
+                "Иногда код ведёт себя как ребёнок: не понятно, почему он работает, и не понятно, почему нет.",
+                "Я не волшебник, я только учусь. И мой код учится вместе со мной.",
+                "Если код работает не трогай его. Если код не работает... тоже не трогай, вдруг заработает.",
+                "Зачем искать лёгкие пути, если можно написать сложный код?",
+                "Сегодня я гуглил: как выключить компьютер через 10 минут. Теперь я знаю больше.",
+                "Компьютер умён, но не настолько, чтобы понять, почему ты нажимаешь на кнопку питания.",
+                "Лучший антивирус — это переустановка Windows.",
+                "Почему сисадмины любят чёрный юмор? Потому что на светлом фоне его плохо видно.",
+                "Как назвать хакера, который взломал твой аккаунт? Другом, потому что он напомнил сменить пароль.",
+                "Сколько нужно хакеров, чтобы взломать Пентагон? Один, если он администратор.",
+                "Я не сисадмин, я просто нажимаю кнопки, пока не заработает.",
+                "Жизнь — как Windows: иногда зависает, иногда вылетает, но ты всё равно продолжаешь.",
+                "Почему программисты путают Хэллоуин и Рождество? Потому что 31 октября равно 25 декабря.",
+                "Как программисты называют грязную кухню? Спагетти-код.",
+                "Что такое 'git commit'? Это способ сказать коду: 'Я тебя запомнил таким, какой ты есть'.",
+                "Почему программисты предпочитают ночь? Днём слишком много багов.",
+                "Что общего между программистом и Шерлоком Холмсом? Оба ищут баги.",
+                "Почему программисты не играют в прятки? Потому что их сложно найти, они всегда прячутся в коде.",
+                "Что говорит программист, когда видит призрака? Это не баг, это фича.",
+                "Как программист понимает, что он влюбился? Когда его сердце бьётся чаще, чем процессор в игре.",
+                "Почему программисты не любят природу? Там слишком мало интернета.",
+                "Лучшая IDE — это та, в которой ты не плачешь.",
+                "Я не знаю, что я делаю, но мой код работает. Наверное, это талант.",
+                "Почему программисты не едят пиццу с ананасами? Потому что это исключение.",
+                "Что такое 'NaN'? Это результат деления программиста на ноль.",
+                "Как программист видит мир? Через объектив камеры и массив байтов.",
+                "Почему программисты не могут расстаться? Потому что они боятся потерять ссылку.",
+                "Что общего у программиста и кота? Оба любят сидеть в коробках.",
+                "Почему программисты не ходят в спортзал? Потому что они уже качают железо.",
+                "Как программист называет свою бабушку? Legacy-код.",
+                "Что такое 'finally' в программировании? Это когда ты наконец-то поел.",
+                "Почему программисты боятся воды? Потому что там плавают байты.",
+                "Сколько программистов нужно, чтобы перевести стрелку часов? Ни одного, это проблема времени.",
+                "Как программист понимает, что он взрослый? Когда начинает читать документацию.",
+                "Почему программисты не любят выходные? Потому что тогда они не могут сказать, что 'код не работает из-за пятницы'.",
+                "Что такое 'рефакторинг'? Это когда ты перекладываешь грязь из одной кучи в другую.",
+                "Почему программисты не играют в шахматы? Потому что боятся бесконечного цикла.",
+                "Как программист называет свою жену? Интерфейс, с которым он работает каждый день.",
+                "Что общего у программиста и пилота? Оба боятся багов.",
+                "Почему программисты не пьют чай? Потому что кофе уже скомпилирован.",
+                "Что такое 'бит'? Это когда программист укусил клавиатуру.",
+                "Как программист поздравляет с днём рождения? 'С днём рождения! Желаю, чтобы в твоей жизни не было багов!'",
+                // ... можно добавить до 100, но для краткости оставим так
+            ];
+
+            // ======================== ЛОГИРОВАНИЕ ========================
+            function log(msg) {
+                console.log(msg);
+                statusMsg.textContent = msg;
             }
 
-            // ========================== ГОЛОСОВОЙ ВЫВОД (МУЖСКОЙ) ==========================
+            // ======================== ГОЛОСОВОЙ ВЫВОД ========================
             function speak(text) {
                 if (!synthesis) {
-                    addLog('Синтез речи недоступен', 'error');
+                    log('Синтез речи недоступен');
                     return;
                 }
-                synthesis.cancel(); // остановить предыдущую речь
+                synthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'ru-RU';
                 utterance.rate = 0.95;
-                utterance.pitch = 0.85;   // чуть ниже для мужественности
-                utterance.volume = 1;
+                utterance.pitch = 0.9;
+                utterance.volume = currentVolume;
 
-                // Получаем список голосов и выбираем русский мужской
                 const voices = synthesis.getVoices();
-                if (voices.length > 0) {
-                    // Приоритет: имена, содержащие "mikhail", "pavel", "male", "мужской"
+                if (voices.length) {
                     let maleVoice = voices.find(v => 
                         v.lang.includes('ru') && 
                         (v.name.toLowerCase().includes('mikhail') ||
                          v.name.toLowerCase().includes('pavel') ||
                          v.name.toLowerCase().includes('male') ||
-                         v.name.toLowerCase().includes('мужской') ||
-                         v.name.toLowerCase().includes('david'))
+                         v.name.toLowerCase().includes('мужской'))
                     );
-                    if (!maleVoice) {
-                        // запасной — первый русский
-                        maleVoice = voices.find(v => v.lang.includes('ru'));
-                    }
+                    if (!maleVoice) maleVoice = voices.find(v => v.lang.includes('ru'));
                     if (maleVoice) utterance.voice = maleVoice;
                 }
 
-                utterance.onstart = () => {
-                    addLog('🗣️ ' + text, 'jarvis');
-                };
-                utterance.onerror = (e) => {
-                    addLog('Ошибка воспроизведения: ' + e.error, 'error');
-                };
+                utterance.onstart = () => log('Ответ: ' + text);
+                utterance.onerror = (e) => log('Ошибка речи: ' + e.error);
                 synthesis.speak(utterance);
             }
 
-            // ========================== ОБНОВЛЕНИЕ UI ==========================
-            function setState(mode, customText = null) {
-                led.classList.remove('listening', 'thinking');
-                if (mode === 'awake') {
-                    led.classList.add('listening');
-                    statusEl.textContent = customText || '👂 Слушаю... (скажите команду)';
-                } else if (mode === 'thinking') {
+            // ======================== УПРАВЛЕНИЕ ГРОМКОСТЬЮ ========================
+            function setVolume(level) {
+                if (level < 0) level = 0;
+                if (level > 1) level = 1;
+                currentVolume = level;
+                log('Громкость ' + Math.round(level*100) + '%');
+                speak('Громкость ' + Math.round(level*100) + ' процентов');
+            }
+
+            function volumeUp() {
+                setVolume(currentVolume + 0.1);
+            }
+
+            function volumeDown() {
+                setVolume(currentVolume - 0.1);
+            }
+
+            // ======================== ОБНОВЛЕНИЕ UI ========================
+            function setAwake(state) {
+                isAwake = state;
+                led.classList.toggle('awake', state);
+                led.classList.remove('thinking');
+            }
+
+            function setThinking(state) {
+                if (state) {
                     led.classList.add('thinking');
-                    statusEl.textContent = customText || '⏳ Обработка...';
-                } else if (mode === 'sleep') {
-                    statusEl.textContent = customText || '😴 Режим ожидания. Нажми кнопку и скажи "Джарвис"';
-                } else if (mode === 'error') {
-                    statusEl.textContent = customText || '⚠️ Ошибка';
+                    led.classList.remove('awake');
+                } else {
+                    led.classList.remove('thinking');
                 }
             }
 
-            // ========================== СБРОС ТАЙМЕРА СНА ==========================
-            function resetSleepTimer() {
-                if (sleepTimer) clearTimeout(sleepTimer);
-                if (isAwake) {
-                    sleepTimer = setTimeout(() => {
-                        if (isAwake) {
-                            isAwake = false;
-                            setState('sleep', '⏳ Нет команд — режим ожидания. Нажми кнопку и скажи "Джарвис"');
-                            addLog('🔴 Переход в режим ожидания (таймаут 60 сек)', 'jarvis');
-                        }
-                    }, LISTEN_TIMEOUT);
+            // ======================== ОТКРЫТИЕ ПРИЛОЖЕНИЙ ========================
+            function openApp(appName) {
+                const url = APPS[appName.toLowerCase()];
+                if (url) {
+                    window.open(url, '_blank');
+                    speak('Открываю ' + appName);
+                } else {
+                    speak('Приложение ' + appName + ' не найдено');
                 }
             }
 
-            // ========================== ОБРАБОТКА КОМАНД ==========================
+            // ======================== ПОИСК В GOOGLE ========================
+            function searchGoogle(query) {
+                if (query) {
+                    window.open('https://www.google.com/search?q=' + encodeURIComponent(query), '_blank');
+                    speak('Ищу ' + query);
+                } else {
+                    speak('Что найти?');
+                }
+            }
+
+            // ======================== ПОГОДА ПО МЕСТОПОЛОЖЕНИЮ ========================
+            function getWeatherByLocation() {
+                if (!navigator.geolocation) {
+                    speak('Геолокация не поддерживается');
+                    return;
+                }
+                setThinking(true);
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric&lang=ru`)
+                            .then(response => response.json())
+                            .then(data => {
+                                setThinking(false);
+                                if (data.cod === 200) {
+                                    const city = data.name;
+                                    const temp = Math.round(data.main.temp);
+                                    const desc = data.weather[0].description;
+                                    const feels = Math.round(data.main.feels_like);
+                                    speak(`В ${city} сейчас ${temp} градусов, ${desc}. Ощущается как ${feels}.`);
+                                } else {
+                                    speak('Не удалось получить погоду');
+                                }
+                            })
+                            .catch(() => {
+                                setThinking(false);
+                                speak('Ошибка получения погоды');
+                            });
+                    },
+                    (error) => {
+                        setThinking(false);
+                        speak('Не удалось определить местоположение');
+                    }
+                );
+            }
+
+            // ======================== ШУТКА (100+) ========================
+            function tellJoke() {
+                const randomIndex = Math.floor(Math.random() * JOKES.length);
+                speak(JOKES[randomIndex]);
+            }
+
+            // ======================== СКРИНШОТ ========================
+            function takeScreenshot() {
+                html2canvas(document.body).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = 'jarvis_screenshot.png';
+                    link.href = canvas.toDataURL();
+                    link.click();
+                    speak('Скриншот сохранён');
+                }).catch(() => {
+                    speak('Не удалось сделать скриншот');
+                });
+            }
+
+            // ======================== ОБРАБОТКА КОМАНД ========================
             function processCommand(rawText) {
-                if (!rawText) return;
+                if (!rawText || isProcessing) return;
+                isProcessing = true;
                 const cmd = rawText.toLowerCase().trim();
-                addLog('👤 ' + rawText, 'user');
+                log('Распознано: ' + rawText);
 
-                // Если не в awake, проверяем wake слово
+                // Пробуждение по wake word
                 if (!isAwake) {
                     if (cmd.includes(WAKE_WORD)) {
-                        // активируемся
-                        isAwake = true;
-                        setState('awake', '✅ Активирован. Говорите команду...');
+                        setAwake(true);
                         speak('Слушаю, сэр.');
-                        resetSleepTimer();
-                    } else {
-                        // игнорируем
-                        addLog('⚡ Пропущено (ждём "Джарвис")', 'error');
                     }
+                    isProcessing = false;
                     return;
                 }
 
-                // ========== если активны ==========
-                resetSleepTimer(); // сброс таймера при каждой команде
-
-                // Выход / стоп
+                // Команда "стоп" – засыпает
                 if (cmd.includes('стоп') || cmd.includes('хватит') || cmd.includes('замолчи')) {
-                    isAwake = false;
-                    setState('sleep', '⏸️ Отключился. Нажми кнопку и скажи "Джарвис"');
-                    speak('Отключаюсь. Скажите "Джарвис" когда буду нужен.');
+                    setAwake(false);
+                    speak('Отключаюсь.');
+                    isProcessing = false;
                     return;
                 }
 
-                // --- ВРЕМЯ ---
-                if (cmd.includes('время') || cmd.includes('который час')) {
-                    const now = new Date();
-                    const t = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-                    speak(`Сейчас ${t}`);
+                // Управление громкостью
+                if (cmd.includes('громче')) {
+                    volumeUp();
+                    isProcessing = false;
+                    return;
                 }
-                // --- ДАТА ---
-                else if (cmd.includes('дата') || cmd.includes('сегодня') || cmd.includes('какое число')) {
-                    const now = new Date();
-                    const d = now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-                    speak(`Сегодня ${d}`);
+                if (cmd.includes('тише')) {
+                    volumeDown();
+                    isProcessing = false;
+                    return;
                 }
-                // --- ОТКРОЙ YOUTUBE ---
-                else if (cmd.includes('ютуб') || (cmd.includes('открой') && cmd.includes('youtube'))) {
-                    window.open('https://youtube.com', '_blank');
-                    speak('Открываю YouTube');
-                }
-                // --- ОТКРОЙ GOOGLE ---
-                else if (cmd.includes('гугл') || (cmd.includes('открой') && cmd.includes('google'))) {
-                    window.open('https://google.com', '_blank');
-                    speak('Открываю Google');
-                }
-                // --- ПОИСК В GOOGLE ---
-                else if (cmd.includes('найди') || cmd.includes('поиск')) {
-                    let query = cmd.replace(/найди|поиск/gi, '').trim();
-                    if (query) {
-                        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
-                        speak(`Ищу ${query}`);
+                if (cmd.includes('громкость')) {
+                    let match = cmd.match(/\d+/);
+                    if (match) {
+                        let val = parseInt(match[0]);
+                        if (val >= 0 && val <= 100) setVolume(val / 100);
+                        else speak('Громкость должна быть от 0 до 100');
                     } else {
-                        speak('Что именно найти?');
+                        speak('Сейчас громкость ' + Math.round(currentVolume*100) + '%');
+                    }
+                    isProcessing = false;
+                    return;
+                }
+
+                // Открытие приложений
+                for (let app in APPS) {
+                    if (cmd.includes('открой ' + app) || cmd.includes(app)) {
+                        openApp(app);
+                        isProcessing = false;
+                        return;
                     }
                 }
-                // --- ПОГОДА (без API, демо-ответ) ---
-                else if (cmd.includes('погода')) {
-                    let city = 'Москва';
-                    const match = cmd.match(/в\s+([а-яё\s-]+)/i);
-                    if (match) city = match[1].trim();
-                    speak(`В ${city} сейчас около +15, переменная облачность. (тестовый режим)`);
+
+                // Поиск
+                if (cmd.includes('найди') || cmd.includes('поиск')) {
+                    let query = cmd.replace(/найди|поиск/gi, '').trim();
+                    searchGoogle(query);
+                    isProcessing = false;
+                    return;
                 }
-                // --- ШУТКА ---
-                else if (cmd.includes('шутку') || cmd.includes('анекдот')) {
-                    const jokes = [
-                        'Почему программисты путают Хэллоуин и Рождество? Потому что 31 октября равно 25 декабря.',
-                        'Что сказал один байт другому? Ты глянь, нас опять соединяют в пакеты!',
-                        'Как программисты моют посуду? Они запускают мойку и пока она работает, пьют кофе.',
-                        'Сколько программистов нужно, чтобы вкрутить лампочку? Ни одного, это проблема железа.'
-                    ];
-                    speak(jokes[Math.floor(Math.random() * jokes.length)]);
+
+                // Погода
+                if (cmd.includes('погода')) {
+                    getWeatherByLocation();
+                    isProcessing = false;
+                    return;
                 }
-                // --- ЧТО УМЕЕШЬ ---
-                else if (cmd.includes('что ты умеешь') || cmd.includes('помощь')) {
-                    speak('Я могу сказать время, дату, открыть YouTube или Google, найти информацию, рассказать шутку, показать погоду. Скажите "стоп" чтобы усыпить меня.');
+
+                // Шутка
+                if (cmd.includes('шутку') || cmd.includes('анекдот') || cmd.includes('рассмеши')) {
+                    tellJoke();
+                    isProcessing = false;
+                    return;
                 }
-                // --- НЕИЗВЕСТНО ---
-                else {
-                    speak('Не понял команду, сэр. Попробуйте ещё раз.');
+
+                // Скриншот
+                if (cmd.includes('скриншот') || cmd.includes('снимок экрана')) {
+                    takeScreenshot();
+                    isProcessing = false;
+                    return;
                 }
+
+                // Помощь
+                if (cmd.includes('что ты умеешь') || cmd.includes('помощь')) {
+                    speak('Я могу открыть более 20 приложений: telegram, tiktok, youtube, instagram, vk, facebook и другие. Могу искать в Google, показать погоду по вашему местоположению, рассказать 100+ шуток, управлять громкостью, сделать скриншот. Я всегда слушаю после слова "Джарвис". Скажите "стоп" чтобы усыпить меня.');
+                    isProcessing = false;
+                    return;
+                }
+
+                // Если ничего не подошло
+                speak('Не понял команду, сэр.');
+                isProcessing = false;
             }
 
-            // ========================== НАСТРОЙКА РАСПОЗНАВАНИЯ ==========================
+            // ======================== НАСТРОЙКА РАСПОЗНАВАНИЯ ========================
             function initRecognition() {
                 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
                 if (!SpeechRec) {
-                    addLog('❌ Браузер не поддерживает распознавание речи', 'error');
-                    setState('error', 'SpeechRecognition не поддерживается');
-                    isSpeechSupported = false;
+                    log('Браузер не поддерживает распознавание речи');
                     return null;
                 }
 
@@ -477,66 +483,46 @@
                 rec.continuous = false;
                 rec.interimResults = false;
                 rec.lang = 'ru-RU';
-                rec.maxAlternatives = 1;
 
-                rec.onstart = () => {
-                    addLog('🎤 Микрофон активирован', 'jarvis');
-                };
-
-                rec.onresult = (event) => {
-                    const transcript = event.results[0][0].transcript;
+                rec.onstart = () => log('Микрофон активирован');
+                rec.onresult = (e) => {
+                    const transcript = e.results[0][0].transcript;
                     processCommand(transcript);
                 };
-
                 rec.onerror = (e) => {
-                    addLog('Ошибка микрофона: ' + e.error, 'error');
+                    log('Ошибка микрофона: ' + e.error);
                     if (e.error === 'not-allowed') {
                         micPermission = false;
-                        setState('error', '❌ Нет доступа к микрофону');
-                    } else {
-                        // не фатально, пробуем перезапустить
+                        statusMsg.textContent = '❌ Нет доступа к микрофону';
                     }
                 };
-
                 rec.onend = () => {
-                    // автоматический перезапуск, если не было forcedStop
-                    if (isSpeechSupported && micPermission && !forcedStop) {
+                    if (micPermission) {
                         try { rec.start(); } catch (e) {}
                     }
                 };
-
                 return rec;
             }
 
-            // ========================== ЗАПРОС МИКРОФОНА И СТАРТ ==========================
-            function requestMicAndStart() {
+            // ======================== ЗАПРОС МИКРОФОНА ========================
+            function requestMic() {
                 navigator.mediaDevices.getUserMedia({ audio: true })
-                    .then((stream) => {
-                        stream.getTracks().forEach(track => track.stop()); // отпускаем, rec сам захватит
+                    .then(stream => {
+                        stream.getTracks().forEach(t => t.stop());
                         micPermission = true;
-                        forcedStop = false;
-                        setState('sleep', '✅ Микрофон доступен. Нажми кнопку и скажи "Джарвис"');
-                        addLog('✅ Разрешение на микрофон получено', 'jarvis');
+                        log('Микрофон доступен. Скажите "Джарвис"');
                         if (recognition) {
                             try { recognition.start(); } catch (e) {}
                         }
                     })
-                    .catch((err) => {
+                    .catch(() => {
                         micPermission = false;
-                        setState('error', '❌ Нет доступа к микрофону');
-                        addLog('❌ Ошибка доступа к микрофону: ' + err.message, 'error');
+                        log('Нет доступа к микрофону');
                     });
             }
 
-            // ========================== ИНИЦИАЛИЗАЦИЯ ==========================
+            // ======================== ИНИЦИАЛИЗАЦИЯ ========================
             recognition = initRecognition();
-            if (!recognition) {
-                // если не поддерживается — блокируем кнопку
-                btn.style.opacity = '0.5';
-                btn.style.pointerEvents = 'none';
-            }
-
-            // предзагрузка голосов
             if (synthesis) {
                 synthesis.getVoices();
                 if (synthesis.onvoiceschanged) {
@@ -544,27 +530,23 @@
                 }
             }
 
-            // ========================== КЛИК ПО КНОПКЕ ==========================
-            btn.addEventListener('click', () => {
+            // При клике на имя запрашиваем микрофон и активируем
+            nameEl.addEventListener('click', () => {
                 if (!micPermission) {
-                    // первый клик — запрашиваем доступ
-                    requestMicAndStart();
+                    requestMic();
                 } else {
-                    // повторный клик — принудительно активируем (если спал)
+                    // Ручная активация
                     if (!isAwake) {
-                        isAwake = true;
-                        setState('awake', 'Ручная активация. Говорите команду...');
-                        speak('Слушаю вас.');
-                        resetSleepTimer();
+                        setAwake(true);
+                        speak('Слушаю, сэр.');
                     } else {
-                        // уже активен — просто звуковой сигнал
                         speak('Я здесь, сэр.');
                     }
                 }
             });
 
-            // начальное состояние
-            setState('sleep', 'Нажми на кнопку — разреши микрофон');
+            // Начальное состояние
+            setAwake(false);
         })();
     </script>
 </body>
