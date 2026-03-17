@@ -108,7 +108,7 @@
     <script>
         (function() {
             // ======================== КОНФИГУРАЦИЯ ========================
-            const WAKE_WORD = 'али';  // "али" барои фаъолсозӣ
+            const WAKE_WORD = 'Hey ALI';  // "али" барои фаъолсозӣ
             const WEATHER_API_KEY = 'dc3d3f6afb0b60d1d0cc77071aa9152f'; // openweathermap
 
             // ======================== ЭЛЕМЕНТЫ ========================
@@ -438,7 +438,7 @@
                     if (maleVoice) utterance.voice = maleVoice;
                 }
 
-                utterance.onstart = () => log('ALI: ' + text);
+                utterance.onstart = () => log('Hey ALI: ' + text);
                 utterance.onerror = (e) => log('Ошибка речи: ' + e.error);
                 synthesis.speak(utterance);
             }
@@ -563,7 +563,7 @@
                     // ВАЖНО: проверяем "али" (WAKE_WORD)
                     if (cmd.includes(WAKE_WORD)) {
                         setAwake(true);
-                        speak('Слушаю, Али?');
+                        speak('Слушаю');
                     }
                     isProcessing = false;
                     return;
