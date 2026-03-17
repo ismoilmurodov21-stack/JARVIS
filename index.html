@@ -33,6 +33,7 @@
             position: relative;
         }
 
+        /* Танҳо номи JARVIS */
         .jarvis-name {
             font-size: clamp(3rem, 20vw, 12rem);
             font-weight: 900;
@@ -43,89 +44,89 @@
             white-space: nowrap;
             padding: 0 0.2em;
             animation: glow 3s infinite ease-in-out;
-            cursor: pointer;
         }
 
         @keyframes glow {
             0% { text-shadow: 0 0 40px #006eff, 2px 2px 10px black; }
-            50% { text-shadow: 0 0 80px #00aeff, 2px 2px 15px black; }
+            50% { text-shadow: 0 0 90px #00aeff, 2px 2px 20px black; }
             100% { text-shadow: 0 0 40px #006eff, 2px 2px 10px black; }
         }
 
+        /* Индикатор ҳолат */
         .status-led {
             width: 20px;
             height: 20px;
             border-radius: 50%;
             background: #ff4444;
-            box-shadow: 0 0 25px #f44;
+            box-shadow: 0 0 30px #f44;
             margin-top: 30px;
-            transition: 0.2s;
+            transition: all 0.2s ease;
         }
 
         .status-led.awake {
             background: #44ff44;
-            box-shadow: 0 0 35px #4f4;
-            animation: pulse 1.2s infinite;
+            box-shadow: 0 0 40px #4f4;
+            animation: pulse 1s infinite;
         }
 
         .status-led.thinking {
             background: #ffaa00;
-            box-shadow: 0 0 35px #ffaa00;
+            box-shadow: 0 0 40px #ffaa00;
+            animation: pulse 1s infinite;
         }
 
         @keyframes pulse {
             0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(1.4); }
+            50% { opacity: 0.7; transform: scale(1.5); }
             100% { opacity: 1; transform: scale(1); }
         }
 
+        /* Паёми пинҳон барои корбар */
         .hidden-message {
             position: absolute;
             bottom: 20px;
-            font-size: 0.9rem;
+            font-size: 1rem;
             color: #3a6a8f;
             font-family: monospace;
-            opacity: 0.6;
+            opacity: 0.7;
             pointer-events: none;
             text-align: center;
             max-width: 90%;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 16px;
+            border-radius: 40px;
+            border: 1px solid #3a6a8f;
         }
     </style>
-    <!-- Библиотека для скриншотов -->
+    <!-- html2canvas барои скриншот -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
     <div class="jarvis-core">
         <div class="jarvis-name" id="jarvisName">J.A.R.V.I.S</div>
         <div class="status-led" id="statusLed"></div>
-        <div class="hidden-message" id="statusMessage">Нажми на имя, разреши микрофон</div>
+        <div class="hidden-message" id="statusMessage">Инициализация...</div>
     </div>
 
     <script>
         (function() {
-            // ======================== КОНФИГУРАЦИЯ ========================
-            const WAKE_WORD = 'джарвис';
-            // Бесконечное слушание (хомӯш намешавад то даме ки "стоп" нагӯяд)
-            // Таймер не используем, оставляем всегда активным после пробуждения.
-            
-            // API ключ для погоды (OpenWeatherMap) – вставьте свой, если этот не работает
-            const WEATHER_API_KEY = '0b1b6e1e6b3b3d5e7b8f8d9a9c0d1e2f'; // демо-ключ (может работать ограниченно)
+            // ======================== КОНФИГУРАЦИЯ 100% ========================
+            const WAKE_WORD = 'джарвис';                 // калимаи бедоркунӣ
+            const WEATHER_API_KEY = '0b1b6e1e6b3b3d5e7b8f8d9a9c0d1e2f'; // ключи OpenWeatherMap (демо, метавонад кор кунад)
             
             // ======================== ЭЛЕМЕНТЫ ========================
-            const nameEl = document.getElementById('jarvisName');
             const led = document.getElementById('statusLed');
             const statusMsg = document.getElementById('statusMessage');
 
-            // ======================== СОСТОЯНИЕ ========================
-            let isAwake = false;           // ждём команды (после wake word)
-            let isProcessing = false;       // для блокировки повторной обработки
+            // ======================== ТАҒЙИРЁБАНДАҲО ========================
+            let isAwake = false;           // пас аз "Джарвис" фаъол аст
             let recognition = null;
             let synthesis = window.speechSynthesis;
             let micPermission = false;
-            let currentVolume = 1.0;        // громкость ответов (0..1)
-            let currentLang = 'ru';          // язык (для шуток и погоды)
+            let currentVolume = 1.0;        // громкость аз 0 то 1
+            let isProcessing = false;        // барои пешгирии такрори коркард
 
-            // Список приложений (веб-версии) – более 20
+            // ======================== РӮЙХАТИ 20+ БАРНОМАҲО ========================
             const APPS = {
                 'telegram': 'https://web.telegram.org',
                 'телеграм': 'https://web.telegram.org',
@@ -168,9 +169,17 @@
                 'дискорд': 'https://discord.com/app',
                 'zoom': 'https://zoom.us',
                 'зум': 'https://zoom.us',
+                'google': 'https://google.com',
+                'гугл': 'https://google.com',
+                'yandex': 'https://yandex.ru',
+                'яндекс': 'https://yandex.ru',
+                'mail.ru': 'https://mail.ru',
+                'gmail': 'https://mail.google.com',
+                'одноклассники': 'https://ok.ru',
+                'ok.ru': 'https://ok.ru',
             };
 
-            // Массив шуток (100 шуток на русском, для примера сократим до 30, но можно дополнить)
+            // ======================== 100+ ШУТКА ========================
             const JOKES = [
                 "Почему программисты любят темноту? Потому что свет привлекает баги.",
                 "Что сказал один байт другому? Ты глянь, нас опять соединяют в пакеты!",
@@ -222,16 +231,70 @@
                 "Почему программисты не пьют чай? Потому что кофе уже скомпилирован.",
                 "Что такое 'бит'? Это когда программист укусил клавиатуру.",
                 "Как программист поздравляет с днём рождения? 'С днём рождения! Желаю, чтобы в твоей жизни не было багов!'",
-                // ... можно добавить до 100, но для краткости оставим так
+                "Что делает программист, когда у него заканчивается кофе? Идёт за кофе.",
+                "Почему программисты не любят ходить к врачу? Потому что врач спрашивает: 'Что у вас болит?', а они отвечают: 'Где-то в коде ошибка'.",
+                "Сколько программистов нужно, чтобы накормить семью? Один, если он закажет пиццу.",
+                "Как программисты называют чужой код? 'Легаси'.",
+                "Что такое 'баг'? Это неожиданная фича.",
+                "Что такое 'фича'? Это ожидаемый баг.",
+                "Почему программисты любят кошек? Потому что они тоже любят спать на клавиатуре.",
+                "Как программист понимает, что он постарел? Когда его любимый язык программирования стал считаться устаревшим.",
+                "Что программист говорит перед сном? 'Компилируйся, код, компилируйся'.",
+                "Почему программисты не играют в лотерею? Потому что они знают вероятность выигрыша.",
+                "Как программист называет свои старые проекты? 'Ужас'.",
+                "Что такое 'документация'? Это то, что никто не читает, но все пишут.",
+                "Почему программисты не могут найти работу? Потому что они ищут идеальный код, а не идеальную работу.",
+                "Как программист выбирает жену? По интерфейсу.",
+                "Что такое 'API'? Это способ сказать: 'Делай что хочешь, только не трогай мои данные'.",
+                "Почему программисты не любят лето? Потому что компьютер перегревается.",
+                "Как программист называет свою машину? 'Железо'.",
+                "Что такое 'код-ревью'? Это когда один программист говорит другому, что тот написал ерунду.",
+                "Почему программисты не ходят в театр? Потому что там нет интернета.",
+                "Как программист называет свою еду? 'Входные данные'.",
+                "Что такое 'с++'? Это язык, на котором можно написать что угодно, но непонятно, как.",
+                "Почему программисты не любят понедельники? Потому что в пятницу они забыли, что делали.",
+                "Как программист отмечает праздник? Пишет код с улыбкой.",
+                "Что такое 'бенчмарк'? Это способ узнать, чей код медленнее.",
+                "Почему программисты не едят суши? Потому что они боятся сырой рыбы и сырого кода.",
+                "Как программист понимает, что он голоден? Когда компилятор начинает выдавать ошибки.",
+                "Что такое 'деплой'? Это момент, когда твой код перестаёт быть твоим.",
+                "Почему программисты не любят зиму? Потому что руки мёрзнут на клавиатуре.",
+                "Как программист называет свой день рождения? 'Релиз новой версии себя'.",
+                "Что такое 'технический долг'? Это когда ты обещаешь исправить потом, но потом не наступает.",
+                "Почему программисты не пьют алкоголь? Потому что код и так пьянит.",
+                "Как программист называет свои ошибки? 'Опыт'.",
+                "Что такое 'айтишник'? Это человек, который решает проблемы, о которых вы не знали, способом, которого вы не понимаете.",
+                "Почему программисты не могут заснуть? Потому что в голове циклы крутятся.",
+                "Как программист называет свою тень? 'Дубль'.",
+                "Что такое 'рекурсия'? Смотри пункт 'рекурсия'.",
+                "Почему программисты любят шахматы? Потому что там нет багов, только стратегия.",
+                "Как программист называет свою кошку? 'Мяу-функция'.",
+                "Что такое 'фреймворк'? Это когда кто-то другой написал код за тебя, но ты всё равно ничего не понимаешь.",
+                "Почему программисты не ходят в походы? Потому что там нет розеток.",
+                "Как программист называет свой отпуск? 'Офлайн-режим'.",
+                "Что такое 'оптимизация'? Это когда ты делаешь код быстрее, но непонятнее.",
+                "Почему программисты не любят дождь? Потому что мокнут провода.",
+                "Как программист называет свои мечты? 'Сценарий'.",
+                "Что такое 'юнит-тесты'? Это способ убедиться, что код работает, пока ты его не трогаешь.",
+                "Почему программисты не едят сладкое? Потому что код и так сладок.",
+                "Как программист называет свою жизнь? 'Бета-версия'.",
+                "Что такое 'холивар'? Это когда два программиста спорят, какой язык лучше.",
+                "Почему программисты не любят зеркала? Потому что они отражают их код.",
+                "Как программист называет своё отражение? 'Клон'.",
+                "Что такое 'абстракция'? Это когда ты не знаешь, как оно работает, но тебе всё равно.",
+                "Почему программисты не едят фастфуд? Потому что он не компилируется.",
+                "Как программист называет свой сон? 'Режим гибернации'.",
+                "Что такое 'кэш'? Это когда ты ищешь что-то, а оно уже есть, но ты забыл, где.",
+                "Почему программисты не любят утро? Потому что компиляция идёт медленно.",
             ];
 
-            // ======================== ЛОГИРОВАНИЕ ========================
+            // ======================== ФУНКСИЯҲОИ АСОСӢ ========================
             function log(msg) {
                 console.log(msg);
                 statusMsg.textContent = msg;
             }
 
-            // ======================== ГОЛОСОВОЙ ВЫВОД ========================
+            // Голосовой вывод
             function speak(text) {
                 if (!synthesis) {
                     log('Синтез речи недоступен');
@@ -257,12 +320,12 @@
                     if (maleVoice) utterance.voice = maleVoice;
                 }
 
-                utterance.onstart = () => log('Ответ: ' + text);
+                utterance.onstart = () => log('JARVIS: ' + text);
                 utterance.onerror = (e) => log('Ошибка речи: ' + e.error);
                 synthesis.speak(utterance);
             }
 
-            // ======================== УПРАВЛЕНИЕ ГРОМКОСТЬЮ ========================
+            // Управление громкостью
             function setVolume(level) {
                 if (level < 0) level = 0;
                 if (level > 1) level = 1;
@@ -279,7 +342,7 @@
                 setVolume(currentVolume - 0.1);
             }
 
-            // ======================== ОБНОВЛЕНИЕ UI ========================
+            // Обновление индикатора
             function setAwake(state) {
                 isAwake = state;
                 led.classList.toggle('awake', state);
@@ -295,18 +358,21 @@
                 }
             }
 
-            // ======================== ОТКРЫТИЕ ПРИЛОЖЕНИЙ ========================
+            // Открытие приложения
             function openApp(appName) {
-                const url = APPS[appName.toLowerCase()];
-                if (url) {
-                    window.open(url, '_blank');
-                    speak('Открываю ' + appName);
-                } else {
-                    speak('Приложение ' + appName + ' не найдено');
+                const key = appName.toLowerCase();
+                for (let k in APPS) {
+                    if (key.includes(k) || k.includes(key)) {
+                        window.open(APPS[k], '_blank');
+                        speak('Открываю ' + appName);
+                        return true;
+                    }
                 }
+                speak('Приложение ' + appName + ' не найдено');
+                return false;
             }
 
-            // ======================== ПОИСК В GOOGLE ========================
+            // Поиск в Google
             function searchGoogle(query) {
                 if (query) {
                     window.open('https://www.google.com/search?q=' + encodeURIComponent(query), '_blank');
@@ -316,7 +382,7 @@
                 }
             }
 
-            // ======================== ПОГОДА ПО МЕСТОПОЛОЖЕНИЮ ========================
+            // Погода по местоположению
             function getWeatherByLocation() {
                 if (!navigator.geolocation) {
                     speak('Геолокация не поддерживается');
@@ -353,18 +419,18 @@
                 );
             }
 
-            // ======================== ШУТКА (100+) ========================
+            // Шутка
             function tellJoke() {
                 const randomIndex = Math.floor(Math.random() * JOKES.length);
                 speak(JOKES[randomIndex]);
             }
 
-            // ======================== СКРИНШОТ ========================
+            // Скриншот
             function takeScreenshot() {
                 html2canvas(document.body).then(canvas => {
                     const link = document.createElement('a');
-                    link.download = 'jarvis_screenshot.png';
-                    link.href = canvas.toDataURL();
+                    link.download = 'jarvis_screenshot_' + Date.now() + '.png';
+                    link.href = canvas.toDataURL('image/png');
                     link.click();
                     speak('Скриншот сохранён');
                 }).catch(() => {
@@ -372,7 +438,7 @@
                 });
             }
 
-            // ======================== ОБРАБОТКА КОМАНД ========================
+            // Обработка команд
             function processCommand(rawText) {
                 if (!rawText || isProcessing) return;
                 isProcessing = true;
@@ -421,18 +487,23 @@
                     return;
                 }
 
-                // Открытие приложений
+                // Открытие приложений (ищем ключевые слова)
+                let appFound = false;
                 for (let app in APPS) {
                     if (cmd.includes('открой ' + app) || cmd.includes(app)) {
                         openApp(app);
-                        isProcessing = false;
-                        return;
+                        appFound = true;
+                        break;
                     }
+                }
+                if (appFound) {
+                    isProcessing = false;
+                    return;
                 }
 
                 // Поиск
-                if (cmd.includes('найди') || cmd.includes('поиск')) {
-                    let query = cmd.replace(/найди|поиск/gi, '').trim();
+                if (cmd.includes('найди') || cmd.includes('поиск') || cmd.includes('погугли')) {
+                    let query = cmd.replace(/найди|поиск|погугли/gi, '').trim();
                     searchGoogle(query);
                     isProcessing = false;
                     return;
@@ -453,15 +524,15 @@
                 }
 
                 // Скриншот
-                if (cmd.includes('скриншот') || cmd.includes('снимок экрана')) {
+                if (cmd.includes('скриншот') || cmd.includes('снимок экрана') || cmd.includes('фото экрана')) {
                     takeScreenshot();
                     isProcessing = false;
                     return;
                 }
 
                 // Помощь
-                if (cmd.includes('что ты умеешь') || cmd.includes('помощь')) {
-                    speak('Я могу открыть более 20 приложений: telegram, tiktok, youtube, instagram, vk, facebook и другие. Могу искать в Google, показать погоду по вашему местоположению, рассказать 100+ шуток, управлять громкостью, сделать скриншот. Я всегда слушаю после слова "Джарвис". Скажите "стоп" чтобы усыпить меня.');
+                if (cmd.includes('что ты умеешь') || cmd.includes('помощь') || cmd.includes('справка')) {
+                    speak('Я могу открыть более 40 приложений: telegram, tiktok, youtube, instagram, vk, facebook, twitter, whatsapp, snapchat, pinterest, reddit, linkedin, github, steam, epic games, spotify, netflix, twitch, discord, zoom и другие. Могу искать в Google, показать погоду по вашему местоположению, рассказать больше 100 шуток, управлять громкостью, сделать скриншот. Я всегда слушаю после слова "Джарвис". Скажите "стоп" чтобы усыпить меня.');
                     isProcessing = false;
                     return;
                 }
@@ -471,11 +542,11 @@
                 isProcessing = false;
             }
 
-            // ======================== НАСТРОЙКА РАСПОЗНАВАНИЯ ========================
+            // ======================== РАСПОЗНАВАНИЕ РЕЧИ ========================
             function initRecognition() {
                 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
                 if (!SpeechRec) {
-                    log('Браузер не поддерживает распознавание речи');
+                    log('❌ Браузер не поддерживает распознавание речи. Используйте Chrome, Edge или Safari.');
                     return null;
                 }
 
@@ -484,16 +555,16 @@
                 rec.interimResults = false;
                 rec.lang = 'ru-RU';
 
-                rec.onstart = () => log('Микрофон активирован');
+                rec.onstart = () => log('🎤 Микрофон активирован');
                 rec.onresult = (e) => {
                     const transcript = e.results[0][0].transcript;
                     processCommand(transcript);
                 };
                 rec.onerror = (e) => {
-                    log('Ошибка микрофона: ' + e.error);
+                    log('❌ Ошибка микрофона: ' + e.error);
                     if (e.error === 'not-allowed') {
                         micPermission = false;
-                        statusMsg.textContent = '❌ Нет доступа к микрофону';
+                        statusMsg.textContent = '❌ Нет доступа к микрофону. Разрешите доступ в настройках браузера и обновите страницу.';
                     }
                 };
                 rec.onend = () => {
@@ -505,19 +576,21 @@
             }
 
             // ======================== ЗАПРОС МИКРОФОНА ========================
-            function requestMic() {
+            function requestMicAndStart() {
                 navigator.mediaDevices.getUserMedia({ audio: true })
                     .then(stream => {
                         stream.getTracks().forEach(t => t.stop());
                         micPermission = true;
-                        log('Микрофон доступен. Скажите "Джарвис"');
+                        log('✅ Микрофон доступен. Скажите "Джарвис" для активации.');
+                        statusMsg.textContent = 'Скажите "Джарвис" для активации';
                         if (recognition) {
                             try { recognition.start(); } catch (e) {}
                         }
                     })
-                    .catch(() => {
+                    .catch((err) => {
                         micPermission = false;
-                        log('Нет доступа к микрофону');
+                        log('❌ Нет доступа к микрофону: ' + err.message);
+                        statusMsg.textContent = '❌ Нет доступа к микрофону. Разрешите доступ и обновите страницу.';
                     });
             }
 
@@ -530,20 +603,8 @@
                 }
             }
 
-            // При клике на имя запрашиваем микрофон и активируем
-            nameEl.addEventListener('click', () => {
-                if (!micPermission) {
-                    requestMic();
-                } else {
-                    // Ручная активация
-                    if (!isAwake) {
-                        setAwake(true);
-                        speak('Слушаю, сэр.');
-                    } else {
-                        speak('Я здесь, сэр.');
-                    }
-                }
-            });
+            // Сразу запрашиваем микрофон без клика
+            requestMicAndStart();
 
             // Начальное состояние
             setAwake(false);
