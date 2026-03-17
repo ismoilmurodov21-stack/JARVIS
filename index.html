@@ -127,7 +127,6 @@
             let isProcessing = false;
 
             // ======================== 100+ КОМАНД ДЛЯ ТЕЛЕФОНА ========================
-            // Все команды обрабатываются через открытие ссылок (intent) или имитацию действий
             const COMMANDS = {
                 // ==== СОЦИАЛЬНЫЕ СЕТИ (20) ====
                 'instagram': 'https://instagram.com',
@@ -197,9 +196,6 @@
                 'навигатор': 'https://maps.google.com',
                 'где я': 'https://maps.google.com',
                 'местоположение': 'https://maps.google.com',
-
-                // ==== ПОГОДА (1) ====
-                'погода': 'https://maps.google.com',
 
                 // ==== ВИДЕО И МУЗЫКА (10) ====
                 'spotify': 'https://open.spotify.com',
@@ -480,47 +476,36 @@
                 }
             }
 
-            // Открытие приложения/сайта
             function openApp(appKey) {
                 const url = COMMANDS[appKey];
                 if (!url) return false;
                 
-                if (url === 'weather') {
-                    getWeatherByLocation();
-                    return true;
-                }
-                
                 if (url.startsWith('http') || url.startsWith('https')) {
                     window.open(url, '_blank');
                 } else if (url.includes('://')) {
-                    // Для intent ссылок
                     window.location.href = url;
                 } else {
-                    // Специальные команды
-                    handleSpecialCommand(url);
+                    // Специальные команды bluetooth, wifi и т.д.
+                    switch(url) {
+                        case 'bluetooth':
+                            speak('Включение Bluetooth на телефоне');
+                            break;
+                        case 'wifi':
+                            speak('Управление Wi-Fi');
+                            break;
+                        case 'flashlight':
+                            speak('Фонарик включён');
+                            break;
+                        case 'volume':
+                            speak('Громкость можно изменить командами "громче" или "тише"');
+                            break;
+                        case 'brightness':
+                            speak('Яркость экрана можно настроить в настройках');
+                            break;
+                    }
                 }
                 speak('Открываю ' + appKey);
                 return true;
-            }
-
-            function handleSpecialCommand(cmd) {
-                switch(cmd) {
-                    case 'bluetooth':
-                        speak('Включение Bluetooth на телефоне');
-                        break;
-                    case 'wifi':
-                        speak('Управление Wi-Fi');
-                        break;
-                    case 'flashlight':
-                        speak('Фонарик включён');
-                        break;
-                    case 'volume':
-                        speak('Громкость можно изменить командами "громче" или "тише"');
-                        break;
-                    case 'brightness':
-                        speak('Яркость экрана можно настроить в настройках');
-                        break;
-                }
             }
 
             function searchGoogle(query) {
@@ -593,17 +578,8 @@
                     return;
                 }
 
-                // Громкость
-                if (cmd.includes('громче')) {
-                    volumeUp();
-                    isProcessing = false;
-                    return;
-                }
-                if (cmd.includes('тише')) {
-                    volumeDown();
-                    isProcessing = false;
-                    return;
-                }
+                if (cmd.includes('громче')) { volumeUp(); isProcessing = false; return; }
+                if (cmd.includes('тише')) { volumeDown(); isProcessing = false; return; }
                 if (cmd.includes('громкость')) {
                     let match = cmd.match(/\d+/);
                     if (match) {
@@ -617,25 +593,20 @@
                     return;
                 }
 
-                // Время
                 if (cmd.includes('время') || cmd.includes('который час')) {
                     const now = new Date();
-                    const time = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-                    speak(`Сейчас ${time}`);
+                    speak('Сейчас ' + now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
                     isProcessing = false;
                     return;
                 }
 
-                // Дата
                 if (cmd.includes('дата') || cmd.includes('сегодня') || cmd.includes('какое число')) {
                     const now = new Date();
-                    const date = now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-                    speak(`Сегодня ${date}`);
+                    speak('Сегодня ' + now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }));
                     isProcessing = false;
                     return;
                 }
 
-                // Поиск в Google
                 if (cmd.includes('найди') || cmd.includes('поиск') || cmd.includes('погугли')) {
                     let query = cmd.replace(/найди|поиск|погугли/gi, '').trim();
                     searchGoogle(query);
@@ -643,28 +614,26 @@
                     return;
                 }
 
-                // Погода
+                // Погода — отдельная функция, не из словаря
                 if (cmd.includes('погода')) {
                     getWeatherByLocation();
                     isProcessing = false;
                     return;
                 }
 
-                // Шутка
                 if (cmd.includes('шутку') || cmd.includes('анекдот') || cmd.includes('рассмеши')) {
                     tellJoke();
                     isProcessing = false;
                     return;
                 }
 
-                // Помощь
                 if (cmd.includes('что ты умеешь') || cmd.includes('помощь') || cmd.includes('справка')) {
                     speak('Я могу открыть более 100 приложений и сайтов: соцсети, мессенджеры, карты, музыку, игры и многое другое. Также могу показать время, дату, погоду, рассказать шутку, управлять громкостью. Скажите "стоп" для отключения.');
                     isProcessing = false;
                     return;
                 }
 
-                // Проверка всех команд из словаря
+                // Проверка всех команд из словаря (кроме погоды — её уже обработали выше)
                 for (let key in COMMANDS) {
                     if (cmd.includes('открой ' + key) || cmd.includes(key)) {
                         openApp(key);
@@ -673,7 +642,6 @@
                     }
                 }
 
-                // Если ничего не найдено
                 speak('Не понял команду. Скажите "помощь".');
                 isProcessing = false;
             }
