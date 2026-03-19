@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>ALI — Голосовой помощник</title>
     <style>
+        /* Стили без изменений (как у вас) */
         * {
             margin: 0;
             padding: 0;
@@ -107,6 +108,34 @@
 
     <script>
         (function() {
+            // ======================== WAKE LOCK (БЛОКИРОВКА СНА) ========================
+            let wakeLock = null;
+
+            async function requestWakeLock() {
+                try {
+                    if ('wakeLock' in navigator) {
+                        wakeLock = await navigator.wakeLock.request('screen');
+                        wakeLock.addEventListener('release', () => {
+                            console.log('Wake Lock освобождён системой');
+                        });
+                        console.log('Wake Lock активен — экран не погаснет');
+                    } else {
+                        console.warn('Wake Lock не поддерживается браузером');
+                    }
+                } catch (err) {
+                    console.error('Ошибка Wake Lock:', err);
+                }
+            }
+
+            // Восстанавливаем Wake Lock при возвращении на вкладку
+            async function handleVisibilityChange() {
+                if (document.visibilityState === 'visible' && (!wakeLock || wakeLock.released)) {
+                    await requestWakeLock();
+                }
+            }
+
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+
             // ======================== КОНФИГУРАЦИЯ ========================
             const WAKE_WORD = 'али';  // "али" барои фаъолсозӣ
             const WEATHER_API_KEY = 'dc3d3f6afb0b60d1d0cc77071aa9152f'; // openweathermap
@@ -689,6 +718,9 @@
             }
             requestMic();
             setAwake(false);
+
+            // ======================== ЗАПУСК WAKE LOCK ========================
+            requestWakeLock();
         })();
     </script>
 </body>
